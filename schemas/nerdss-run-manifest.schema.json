@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://nerdss.org/schemas/nerdss-run-manifest.schema.json",
+  "title": "NERDSS run manifest",
+  "description": "A machine-readable inventory for one NERDSS run and its output artifacts. This schema describes metadata around existing outputs; it does not define the contents of legacy output files.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_type",
+    "generated_at",
+    "run",
+    "files"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Semantic version of this manifest schema.",
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "manifest_type": {
+      "type": "string",
+      "const": "nerdss-run-manifest"
+    },
+    "generated_at": {
+      "description": "UTC timestamp when the manifest was produced.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "generator": {
+      "description": "Tool that produced this manifest.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "nerdss": {
+      "description": "NERDSS executable and build metadata, if known.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "executable": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "git_commit": {
+          "type": "string"
+        },
+        "build": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "run": {
+      "description": "Run-level metadata shared by the artifacts listed in files.",
+      "type": "object",
+      "required": [
+        "output_directory"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "User- or workflow-defined run identifier.",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "working_directory": {
+          "type": "string"
+        },
+        "input_file": {
+          "type": "string"
+        },
+        "output_directory": {
+          "type": "string"
+        },
+        "data_directory": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "planned",
+            "running",
+            "completed",
+            "failed",
+            "unknown"
+          ]
+        },
+        "simulation_time": {
+          "$ref": "#/definitions/quantity"
+        },
+        "time_step": {
+          "$ref": "#/definitions/quantity"
+        },
+        "iterations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "restart": {
+          "$ref": "#/definitions/restart"
+        },
+        "mpi": {
+          "$ref": "#/definitions/mpi"
+        }
+      }
+    },
+    "directories": {
+      "description": "Known output directories such as DATA, PDB, and RESTARTS.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/directory"
+      }
+    },
+    "inputs": {
+      "description": "Input files used to configure the run.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/file"
+      }
+    },
+    "files": {
+      "description": "Output artifacts produced by the run.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/file"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "extensions": {
+      "description": "Namespaced extension data. Extension keys should use reverse-DNS or project-qualified names.",
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "definitions": {
+    "directory": {
+      "type": "object",
+      "required": [
+        "path",
+        "role"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "data",
+            "pdb_snapshots",
+            "restarts",
+            "logs",
+            "other"
+          ]
+        },
+        "exists": {
+          "type": "boolean"
+        },
+        "file_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "required": [
+        "path",
+        "role"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Run-directory-relative path when possible.",
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "legacy_text_timeseries",
+            "legacy_block_timeseries",
+            "trajectory_xyz",
+            "coordinate_xyz",
+            "pdb_snapshot",
+            "restart",
+            "rng_state",
+            "topology_psf",
+            "stdout",
+            "stderr",
+            "manifest",
+            "input",
+            "other"
+          ]
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "csv",
+            "tsv",
+            "legacy_text",
+            "xyz",
+            "pdb",
+            "cif",
+            "psf",
+            "restart",
+            "json",
+            "binary",
+            "unknown"
+          ]
+        },
+        "media_type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "exists": {
+          "type": "boolean"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/definitions/sha256"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "time_units": {
+          "type": "string"
+        },
+        "sample_count": {
+          "description": "Best-effort number of samples or blocks represented by this file.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "generated_by_rank": {
+          "description": "MPI rank when the file is a rank-local output.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema": {
+          "description": "Schema URI for structured file contents, if any.",
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "quantity": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        }
+      }
+    },
+    "restart": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from_restart": {
+          "type": "boolean"
+        },
+        "source_file": {
+          "type": "string"
+        },
+        "written_file": {
+          "type": "string"
+        }
+      }
+    },
+    "mpi": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ranks": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
