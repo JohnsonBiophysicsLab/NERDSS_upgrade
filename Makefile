@@ -27,13 +27,12 @@
 #
 
 BDIR   = bin
-ODIR   = obj
 SDIR   = src
 EDIR   = EXEs
 
 PROF   =
 
-.PHONY: any debug profile clean
+.PHONY: serial mpi debug profile asan ubsan sanitizers static-analysis clean syntax
 
 # ---------------- REQUIREMENTS: gsl and directories
 hasGSL = $(shell type gsl-config >/dev/null 2>&1; echo $$?)
@@ -47,18 +46,26 @@ endif
 # ---------------- EXECUTABLE SETUP
 INCLUDE_FOLDERS = boundary_conditions classes error math parser reactions system_setup trajectory_functions io
 
-ifneq (,$(filter serial,$(MAKECMDGOALS)))
+BUILD_GOALS = $(filter serial mpi debug profile asan ubsan sanitizers,$(MAKECMDGOALS))
+SERIAL_GOALS = $(filter serial debug profile asan ubsan sanitizers,$(MAKECMDGOALS))
+SANITIZER_GOALS = $(filter asan ubsan sanitizers,$(MAKECMDGOALS))
+
+ifneq (,$(SERIAL_GOALS))
 	_EXEC = nerdss
+	ENTRYPOINT = nerdss
 endif
 
 ifneq (,$(filter mpi,$(MAKECMDGOALS)))
 	_EXEC = nerdss_mpi
+	ENTRYPOINT = nerdss_mpi
 	DEFS = -Dmpi_
 	INCLUDE_FOLDERS += debug io_mpi mpi
 endif
 
-ifneq (,$(filter clean,$(MAKECMDGOALS)))
-	MAKECMDGOALS = dummy
+ifneq (,$(filter mpi,$(MAKECMDGOALS)))
+ifneq (,$(SANITIZER_GOALS))
+$(error Sanitizer targets are currently supported for serial builds only.)
+endif
 endif
 
 ifneq (,$(filter debug,$(MAKECMDGOALS)))
@@ -69,8 +76,11 @@ ifneq (,$(filter profile,$(MAKECMDGOALS)))
 	ENABLE_PROFILING = true
 endif
 
+ifneq (,$(SANITIZER_GOALS))
+	ENABLE_DEBUG = true
+endif
+
 SRCS = $(foreach dir,$(INCLUDE_FOLDERS),$(wildcard $(SDIR)/$(dir)/*.cpp))
-EXEC = $(patsubst %,$(BDIR)/%,$(_EXEC))
 
 OS    := $(shell uname)
 INTEL = $(shell type icpc  >/dev/null 2>&1; echo $$?)
@@ -79,13 +89,17 @@ GCC   = $(shell type g++   >/dev/null 2>&1; echo $$?)
 INCS    = $(shell gsl-config --cflags) -Iinclude
 CXXFLAGS = -std=c++0x
 LIBS     = $(shell gsl-config --libs)
+SANITIZER_FLAGS =
+SANITIZER_NAME =
+EXEC_SUFFIX =
+BUILD_VARIANT = release
 
 # ---------------- COMPILER SETUP
 override PROF   =
 
 ifeq ($(GCC),0)
 	CC      = g++
-	ifeq (mpi,$(MAKECMDGOALS))
+	ifneq (,$(filter mpi,$(MAKECMDGOALS)))
 		CC = mpicxx
 	endif
 	CFLAGS  = -O3 # use -O2 if profiling is confused by optimization
@@ -93,7 +107,7 @@ endif
 
 ifeq ($(INTEL),0)
 	CC      = icpc
-	ifeq (mpi,$(MAKECMDGOALS))
+	ifneq (,$(filter mpi,$(MAKECMDGOALS)))
 		CC = mpicxx
 	endif
 	CFLAGS  = -O3 # use -O2 if profiling is confused by optimization
@@ -102,16 +116,49 @@ endif
 # ---------------- Feature toggles
 # Set debug flags if ENABLE_DEBUG is true
 ifdef ENABLE_DEBUG
-	CFLAGS = -g -O0 -fsanitize=address -fno-omit-frame-pointer
+	BUILD_VARIANT = debug
+	CFLAGS = -g -O0 -fno-omit-frame-pointer
 	CXXFLAGS += -DDEBUG
+endif
+
+ifneq (,$(filter asan,$(MAKECMDGOALS)))
+	SANITIZER_FLAGS += -fsanitize=address
+	SANITIZER_NAME = asan
+endif
+
+ifneq (,$(filter ubsan,$(MAKECMDGOALS)))
+	SANITIZER_FLAGS += -fsanitize=undefined
+	SANITIZER_NAME = ubsan
+endif
+
+ifneq (,$(filter sanitizers,$(MAKECMDGOALS)))
+	SANITIZER_FLAGS += -fsanitize=address -fsanitize=undefined
+	SANITIZER_NAME = sanitizers
+endif
+
+ifneq (,$(filter asan,$(MAKECMDGOALS)))
+ifneq (,$(filter ubsan,$(MAKECMDGOALS)))
+	SANITIZER_NAME = sanitizers
+endif
+endif
+
+ifneq (,$(SANITIZER_FLAGS))
+	BUILD_VARIANT = $(SANITIZER_NAME)
+	EXEC_SUFFIX = _$(SANITIZER_NAME)
+	CFLAGS = -g -O0 -fno-omit-frame-pointer $(SANITIZER_FLAGS)
+	LIBS += $(SANITIZER_FLAGS)
 endif
 
 # Set profiling flags if ENABLE_PROFILING is true
 ifdef ENABLE_PROFILING
+	BUILD_VARIANT := $(BUILD_VARIANT)-profile
 	PROF += -pg
 	CFLAGS += -DENABLE_PROFILING 
 	LIBS += $(shell pkg-config --libs libprofiler)
 endif
+
+ODIR = obj/$(BUILD_VARIANT)
+EXEC = $(patsubst %,$(BDIR)/%$(EXEC_SUFFIX),$(_EXEC))
 
 # ---------------- OBJECT FILES
 OBJS = $(patsubst $(SDIR)/%.cpp,$(ODIR)/%.o,$(SRCS))
@@ -123,12 +170,14 @@ syntax:
 	@echo "------------------------------------"
 	exit 0
 
-$(MAKECMDGOALS): $(EXEC)
+ifneq ($(strip $(BUILD_GOALS)),)
+$(BUILD_GOALS): $(EXEC)
 	@echo "Finished making (re-)building $(MAKECMDGOALS) version, $(EXEC)."
+endif
 
 $(EXEC): $(OBJS)
-	@echo "Compiling $(EDIR)/$(@F).cpp"
-	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(PROF) -o $@ $(EDIR)/$(@F).cpp $(OBJS) $(LIBS) $(PLANG)
+	@echo "Compiling $(EDIR)/$(ENTRYPOINT).cpp"
+	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(PROF) -o $@ $(EDIR)/$(ENTRYPOINT).cpp $(OBJS) $(LIBS) $(PLANG)
 	@echo "------------"
 
 $(ODIR)/%.o: $(SDIR)/%.cpp
@@ -138,7 +187,10 @@ $(ODIR)/%.o: $(SDIR)/%.cpp
 	@echo "------------"
 
 clean:
-	rm -rf $(ODIR) bin
+	rm -rf obj bin
+
+static-analysis:
+	tools/run_static_analysis.sh
 
 
 # Reference: https://www.gnu.org/software/make/manual/html_node/Quick-Reference.html
