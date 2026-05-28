@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "defaults": {
+    "seed": 8675309,
+    "timeout_seconds": 120,
+    "expected_exit_code": 0
+  },
+  "cases": [
+    {
+      "name": "create_destroy_fresh_small",
+      "description": "Fresh fixed-seed create/destroy validation sample with a shortened runtime.",
+      "sample_dir": "sample_inputs/VALIDATE_SUITE/create_destroy",
+      "stage_files": [
+        "A.mol",
+        "Phos.mol",
+        "create.inp"
+      ],
+      "input_file": "create.inp",
+      "mode": "fresh",
+      "seed": 20240528,
+      "patches": [
+        {
+          "path": "create.inp",
+          "pattern": "nItr\\s*=\\s*60000",
+          "replace": "nItr = 60"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "timeWrite\\s*=\\s*2",
+          "replace": "timeWrite = 10"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "trajWrite\\s*=\\s*100000",
+          "replace": "trajWrite = 30"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "restartWrite\\s*=\\s*100000",
+          "replace": "restartWrite = 30"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "checkPoint\\s*=\\s*10000000",
+          "replace": "checkPoint = 30"
+        }
+      ],
+      "comparisons": [
+        {
+          "path": "stdout.txt",
+          "mode": "exact",
+          "ignore_lines_matching": [
+            "^Command:",
+            "^Start date:",
+            "^End date:",
+            "^\\s*Wall Time:",
+            "^Avg timestep duration:",
+            "^Estimated end time:",
+            "^Time elapsed:",
+            "^Estimated time remaining:",
+            "^Total runtime:"
+          ]
+        },
+        {
+          "path": "DATA/copy_numbers_time.dat",
+          "mode": "tolerant",
+          "rtol": 1e-12,
+          "atol": 1e-12
+        },
+        {
+          "path": "DATA/mono_dimer_time.dat",
+          "mode": "exact"
+        },
+        {
+          "path": "DATA/bound_pair_time.dat",
+          "mode": "exact"
+        },
+        {
+          "path": "DATA/restart.dat",
+          "mode": "tolerant",
+          "rtol": 1e-12,
+          "atol": 1e-12
+        }
+      ]
+    },
+    {
+      "name": "homo_trimer_restart_from_1000",
+      "description": "Restart-path smoke regression from a checked-in homoTrimer restart, shortened to a few iterations.",
+      "sample_dir": "sample_inputs/VALIDATE_SUITE/homoTrimer",
+      "stage_files": [
+        "RESTARTS/restart1000.dat"
+      ],
+      "mode": "restart",
+      "restart_file": "RESTARTS/restart1000.dat",
+      "seed": 20240529,
+      "patches": [
+        {
+          "path": "RESTARTS/restart1000.dat",
+          "pattern": "numItr\\s*=\\s*10000",
+          "replace": "numItr = 1005"
+        },
+        {
+          "path": "RESTARTS/restart1000.dat",
+          "pattern": "timeWrite\\s*=\\s*1",
+          "replace": "timeWrite = 5"
+        },
+        {
+          "path": "RESTARTS/restart1000.dat",
+          "pattern": "restartWrite\\s*=\\s*10000000",
+          "replace": "restartWrite = 10000000"
+        },
+        {
+          "path": "RESTARTS/restart1000.dat",
+          "pattern": "checkPoint\\s*=\\s*1000",
+          "replace": "checkPoint = 10000000"
+        }
+      ],
+      "restart_support": {
+        "restart_file": "RESTARTS/restart1000.dat",
+        "rng_state_file": null,
+        "notes": "The runner stages restart files and can stage a matching rng_state file when one is added to the manifest. This initial case verifies the -r code path with a fixed seed and shortened numItr."
+      },
+      "comparisons": [
+        {
+          "path": "stdout.txt",
+          "mode": "exact",
+          "ignore_lines_matching": [
+            "^Command:",
+            "^Start date:",
+            "^End date:",
+            "^\\s*Wall Time:",
+            "^Avg timestep duration:",
+            "^Estimated end time:",
+            "^Time elapsed:",
+            "^Estimated time remaining:",
+            "^Total runtime:"
+          ]
+        },
+        {
+          "path": "DATA/copy_numbers_time.dat",
+          "mode": "tolerant",
+          "rtol": 1e-12,
+          "atol": 1e-12
+        },
+        {
+          "path": "DATA/mono_dimer_time.dat",
+          "mode": "exact"
+        },
+        {
+          "path": "DATA/bound_pair_time.dat",
+          "mode": "exact"
+        },
+        {
+          "path": "DATA/restart.dat",
+          "mode": "tolerant",
+          "rtol": 1e-12,
+          "atol": 1e-12
+        }
+      ]
+    }
+  ]
+}
