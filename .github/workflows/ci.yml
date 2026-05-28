@@ -1,0 +1,89 @@
+name: CI
+
+# Phase 7 first CI slice. This branch is intentionally stacked on
+# codex/upgrade-smoke-runner because master lacks the serial build/smoke fix.
+# Style tooling and broader regression harness checks live on sibling branches
+# and can be added as separate jobs after those branches are merged or stacked.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - codex/**
+
+permissions:
+  contents: read
+
+jobs:
+  linux-build-smoke:
+    name: Linux build and smoke
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libgsl-dev
+
+      - name: Show tool versions
+        run: |
+          cmake --version
+          g++ --version
+          gsl-config --version
+          python3 --version
+
+      - name: Configure serial CMake build
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build serial NERDSS
+        run: cmake --build build --target nerdss --parallel 2
+
+      - name: Run serial smoke test
+        run: python3 tools/run_smoke_tests.py --build-system cmake --artifact-dir smoke-artifacts
+
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nerdss-smoke-${{ github.run_id }}
+          path: smoke-artifacts
+          if-no-files-found: ignore
+
+  linux-unit-tests:
+    name: Linux unit tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libgsl-dev
+
+      - name: Detect CTest unit tests
+        id: unit_tests
+        run: |
+          if [ -d tests ] && grep -R "add_test" CMakeLists.txt tests >/dev/null 2>&1; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CTest unit tests not found in this branch; this job will activate when codex/upgrade-unit-tests is merged or stacked."
+          fi
+
+      - name: Configure unit-test build
+        if: steps.unit_tests.outputs.present == 'true'
+        run: cmake -S . -B build-unit-tests -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+
+      - name: Build unit tests
+        if: steps.unit_tests.outputs.present == 'true'
+        run: cmake --build build-unit-tests --parallel 2
+
+      - name: Run CTest
+        if: steps.unit_tests.outputs.present == 'true'
+        run: ctest --test-dir build-unit-tests --output-on-failure
