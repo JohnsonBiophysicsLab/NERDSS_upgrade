@@ -34,6 +34,7 @@ std::map<const std::string, ParamKeyword> parmKeywords = {
     { "transitionwrite", ParamKeyword::transitionWrite }, 
     { "clusteroverlapcheck", ParamKeyword::clusterOverlapCheck }, 
     { "rngwrite", ParamKeyword::rngwrite },
+    { "bondedcomplexwrite", ParamKeyword::bondedComplexWrite },
 };
 
 void Parameters::set_value(std::string value, ParamKeyword keywords)
@@ -130,6 +131,11 @@ void Parameters::set_value(std::string value, ParamKeyword keywords)
             this->rngwrite = read_boolean(value);
             std::cout << "Read in RNGwrite: " << std::boolalpha << this->rngwrite << std::endl;
             break;
+        case 20:
+            temp = std::stod(value);
+            this->bondedComplexWrite = (long long)(temp);
+            std::cout << "Read in bondedComplexWrite: " << this->bondedComplexWrite << " timeSteps" << std::endl;
+            break;
         default:
             throw std::invalid_argument("Not a valid keyword.");
         }
@@ -202,6 +208,7 @@ void Parameters::display()
     std::cout << "Checkpoint write interval: " << checkPoint << " timesteps\n";
     std::cout << "overlapSepLimit: " << overlapSepLimit << " nm\n";
     std::cout << "Transition matrix write interval: " << transitionWrite << " timesteps\n";
+    std::cout << "Bonded complex JSON write interval: " << bondedComplexWrite << " timesteps\n";
     std::cout << "ClusterOverlapCheck: " << clusterOverlapCheck << "\n";
     std::cout << "RNGwrite: " << rngwrite << "\n";
 
