@@ -1,0 +1,523 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nerdss.org/schemas/nerdss-input.schema.json",
+  "title": "NERDSS input JSON",
+  "description": "Versioned JSON representation for NERDSS simulation inputs. This schema is an additive modernization target and is designed to coexist with legacy .inp and .mol files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "simulation"
+  ],
+  "properties": {
+    "format": {
+      "const": "nerdss-input-json"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^0\\.1\\.\\d+$",
+      "description": "Schema family for the Phase 4 input modernization slice."
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "compatibility": {
+      "$ref": "#/$defs/compatibility"
+    },
+    "simulation": {
+      "$ref": "#/$defs/simulation"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_.#-]*$"
+    },
+    "numberOrExpression": {
+      "description": "A JSON number, null for legacy nan/null, or a preserved legacy expression such as M_PI.",
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ]
+    },
+    "legacyValue": {
+      "description": "Smallest common value model for legacy key/value lines. A future parser can tighten selected fields while preserving this escape hatch.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/numberOrExpression"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/legacyValue"
+          }
+        }
+      ]
+    },
+    "vector3": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "json-native",
+            "legacy-inp",
+            "legacy-inspection"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "generatedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "legacyInputPath": {
+          "type": "string"
+        },
+        "legacyWorkingDirectory": {
+          "type": "string"
+        },
+        "legacyPreserved": {
+          "type": "boolean",
+          "default": true
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "simulation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "molecules",
+        "reactions"
+      ],
+      "properties": {
+        "parameters": {
+          "$ref": "#/$defs/parameters"
+        },
+        "boundaries": {
+          "$ref": "#/$defs/boundaries"
+        },
+        "molecules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/molecule"
+          }
+        },
+        "reactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reaction"
+          }
+        },
+        "observables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "required": [
+                  "expression"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "expression": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/legacyValue"
+      },
+      "properties": {
+        "nItr": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeStep": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "timeWrite": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trajWrite": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "restartWrite": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pdbWrite": {
+          "type": "integer",
+          "minimum": -1
+        },
+        "transitionWrite": {
+          "type": "integer",
+          "minimum": -1
+        },
+        "checkPoint": {
+          "type": "integer",
+          "minimum": -1
+        },
+        "fromRestart": {
+          "type": "boolean"
+        },
+        "assocDissocWrite": {
+          "type": "boolean"
+        },
+        "clusterOverlapCheck": {
+          "type": "boolean"
+        },
+        "rngWrite": {
+          "type": "boolean"
+        },
+        "overlapSepLimit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "scaleMaxDisplace": {
+          "type": "number",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/legacyValue"
+      },
+      "properties": {
+        "implicitLipid": {
+          "type": "boolean"
+        },
+        "waterBox": {
+          "$ref": "#/$defs/vector3"
+        },
+        "xBCtype": {
+          "type": "string"
+        },
+        "yBCtype": {
+          "type": "string"
+        },
+        "zBCtype": {
+          "type": "string"
+        },
+        "isSphere": {
+          "type": "boolean"
+        },
+        "sphereR": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "hasCompartment": {
+          "type": "boolean"
+        },
+        "compartmentR": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "compartmentSiteD": {
+          "type": "number",
+          "minimum": 0
+        },
+        "compartmentSiteRho": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "molecule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/identifier"
+        },
+        "copies": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "initialStates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "moleculeFile": {
+          "type": "string",
+          "description": "Path to an existing legacy .mol file, relative to the input working directory unless absolute."
+        },
+        "template": {
+          "$ref": "#/$defs/moleculeTemplate"
+        },
+        "legacy": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/legacyValue"
+          }
+        }
+      }
+    },
+    "moleculeTemplate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/legacyValue"
+          }
+        },
+        "coordinates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "site",
+              "position"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "site": {
+                "$ref": "#/$defs/identifier"
+              },
+              "position": {
+                "$ref": "#/$defs/vector3"
+              }
+            }
+          }
+        },
+        "bonds": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "$ref": "#/$defs/identifier"
+              },
+              {
+                "$ref": "#/$defs/identifier"
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+    "reaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "equation"
+      ],
+      "properties": {
+        "equation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "BNGL-like legacy reaction equation, preserved verbatim."
+        },
+        "reversible": {
+          "type": "boolean"
+        },
+        "parameters": {
+          "$ref": "#/$defs/reactionParameters"
+        },
+        "legacy": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/legacyValue"
+          }
+        }
+      }
+    },
+    "reactionParameters": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/legacyValue"
+      },
+      "properties": {
+        "onRate3Dka": {
+          "type": "number",
+          "minimum": 0
+        },
+        "onRate3DMacro": {
+          "type": "number",
+          "minimum": 0
+        },
+        "offRatekb": {
+          "type": "number",
+          "minimum": 0
+        },
+        "offRateMacro": {
+          "type": "number",
+          "minimum": 0
+        },
+        "onRate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "offRate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "kcat": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sigma": {
+          "$ref": "#/$defs/numberOrExpression"
+        },
+        "norm1": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/numberOrExpression"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "norm2": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/numberOrExpression"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "assocAngles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/numberOrExpression"
+          },
+          "minItems": 5,
+          "maxItems": 5
+        },
+        "observeLabel": {
+          "type": "string"
+        },
+        "rxnLabel": {
+          "type": "string"
+        },
+        "coupledRxnLabel": {
+          "type": "string"
+        },
+        "bindRadSameCom": {
+          "$ref": "#/$defs/numberOrExpression"
+        },
+        "creationRadius": {
+          "type": "number",
+          "minimum": 0
+        },
+        "loopCoopFactor": {
+          "type": "number",
+          "minimum": 0
+        },
+        "length3Dto2D": {
+          "type": "number",
+          "minimum": 0
+        },
+        "area3Dto1D": {
+          "type": "number",
+          "minimum": 0
+        },
+        "onMem": {
+          "type": "boolean"
+        },
+        "isCoupled": {
+          "type": "boolean"
+        },
+        "irrevRingClosure": {
+          "type": "boolean"
+        },
+        "excludeVolumeBound": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
