@@ -29,6 +29,7 @@ NUMBER_RE = re.compile(
 class RunResult:
     case_name: str
     run_dir: Path
+    seed: int | None
     returncode: int
     stdout_path: Path
     stderr_path: Path
@@ -69,6 +70,16 @@ def parse_args() -> argparse.Namespace:
         "--list",
         action="store_true",
         help="List manifest cases and exit.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate selected cases and print planned NERDSS commands without running.",
+    )
+    parser.add_argument(
+        "--json-output",
+        type=Path,
+        help="Write a machine-readable JSON report for list, dry-run, or run results.",
     )
     parser.add_argument(
         "--baseline-root",
@@ -117,13 +128,35 @@ def selected_cases(
     return [by_name[name] for name in requested_names]
 
 
+def case_type(case: dict[str, Any]) -> str:
+    return case.get("type", case.get("validation_type", "deterministic"))
+
+
+def is_stochastic_case(case: dict[str, Any]) -> bool:
+    return case_type(case) in {"stochastic", "stochastic_ensemble", "seed_set"}
+
+
+def seed_set(case: dict[str, Any], defaults: dict[str, Any]) -> list[int]:
+    seeds = case.get("seed_set", defaults.get("stochastic_seed_set"))
+    if not seeds:
+        raise RegressionError(f"Stochastic case {case['name']} needs seed_set")
+    try:
+        return [int(seed) for seed in seeds]
+    except (TypeError, ValueError) as exc:
+        raise RegressionError(f"Case {case['name']} has an invalid seed_set") from exc
+
+
+def resolve_binary_path(binary: Path) -> Path:
+    return binary if binary.is_absolute() else REPO_ROOT / binary
+
+
 def build_binary() -> None:
     print("Building serial NERDSS executable...")
     subprocess.run(["make", "serial"], cwd=REPO_ROOT, check=True)
 
 
 def require_binary(binary: Path) -> Path:
-    resolved = binary if binary.is_absolute() else REPO_ROOT / binary
+    resolved = resolve_binary_path(binary)
     if not resolved.exists():
         raise RegressionError(
             f"NERDSS binary not found at {resolved}. Run `make serial` or pass --build."
@@ -183,8 +216,13 @@ def stage_rng_state(case: dict[str, Any], run_dir: Path) -> None:
     shutil.copy2(source, run_dir / "rng_state")
 
 
-def make_command(binary: Path, case: dict[str, Any], defaults: dict[str, Any]) -> list[str]:
-    seed = str(case.get("seed", defaults.get("seed")))
+def make_command(
+    binary: Path,
+    case: dict[str, Any],
+    defaults: dict[str, Any],
+    seed_override: int | None = None,
+) -> list[str]:
+    seed = str(seed_override if seed_override is not None else case.get("seed", defaults.get("seed")))
     mode = case.get("mode", "fresh")
     if mode == "fresh":
         input_file = case.get("input_file")
@@ -216,13 +254,14 @@ def run_case(
     defaults: dict[str, Any],
     parent_dir: Path,
     run_label: str,
+    seed_override: int | None = None,
 ) -> RunResult:
     run_dir = parent_dir / case["name"] / run_label
     if run_dir.exists():
         shutil.rmtree(run_dir)
     prepare_run_dir(case, run_dir)
 
-    command = make_command(binary, case, defaults)
+    command = make_command(binary, case, defaults, seed_override)
     timeout = int(case.get("timeout_seconds", defaults.get("timeout_seconds", 120)))
     completed = subprocess.run(
         command,
@@ -239,7 +278,9 @@ def run_case(
     stdout_path.write_text(completed.stdout, encoding="utf-8")
     stderr_path.write_text(completed.stderr, encoding="utf-8")
     (run_dir / "exit_code.txt").write_text(f"{completed.returncode}\n", encoding="utf-8")
-    return RunResult(case["name"], run_dir, completed.returncode, stdout_path, stderr_path)
+    return RunResult(
+        case["name"], run_dir, seed_override, completed.returncode, stdout_path, stderr_path
+    )
 
 
 def copy_baseline(run_dir: Path, baseline_case_dir: Path) -> None:
@@ -381,6 +422,220 @@ def compare_case_outputs(
     return failures
 
 
+def parse_numeric_table(path: Path) -> tuple[list[str], list[list[float]]]:
+    if not path.exists():
+        raise RegressionError(f"Expected stochastic statistics file is missing: {path}")
+
+    lines = [
+        line.strip()
+        for line in path.read_text(encoding="latin-1").splitlines()
+        if line.strip()
+    ]
+    if not lines:
+        raise RegressionError(f"Statistics file is empty: {path}")
+
+    delimiter = "," if "," in lines[0] else None
+    header = [
+        token.strip()
+        for token in (lines[0].split(delimiter) if delimiter else lines[0].split())
+    ]
+    rows: list[list[float]] = []
+    for line in lines[1:]:
+        tokens = [
+            token.strip()
+            for token in (line.split(delimiter) if delimiter else line.split())
+            if token.strip()
+        ]
+        try:
+            rows.append([float(token) for token in tokens])
+        except ValueError:
+            continue
+
+    if not rows:
+        raise RegressionError(f"Statistics file has no numeric rows: {path}")
+    return header, rows
+
+
+def column_index(header: list[str], column: int | str, path: Path) -> int:
+    if isinstance(column, int):
+        index = column
+    elif isinstance(column, str) and column.isdigit():
+        index = int(column)
+    elif isinstance(column, str):
+        normalized = {name.strip(): index for index, name in enumerate(header)}
+        if column not in normalized:
+            raise RegressionError(
+                f"Column {column!r} not found in {path}; available columns: {header}"
+            )
+        index = normalized[column]
+    else:
+        raise RegressionError(f"Invalid column selector {column!r} for {path}")
+
+    if index < 0 or index >= len(header):
+        raise RegressionError(f"Column index {index} is out of range for {path}")
+    return index
+
+
+def select_metric_value(rows: list[list[float]], index: int, selector: str, path: Path) -> float:
+    values = [row[index] for row in rows if index < len(row)]
+    if not values:
+        raise RegressionError(f"No values found for column {index} in {path}")
+
+    if selector == "last":
+        return values[-1]
+    if selector == "first":
+        return values[0]
+    if selector == "min":
+        return min(values)
+    if selector == "max":
+        return max(values)
+    if selector == "mean":
+        return sum(values) / len(values)
+    raise RegressionError(f"Unsupported value selector {selector!r} for {path}")
+
+
+def summarize_values(values: list[float], requested: list[str]) -> dict[str, float]:
+    count = len(values)
+    mean = sum(values) / count
+    variance = (
+        sum((value - mean) ** 2 for value in values) / (count - 1) if count > 1 else 0.0
+    )
+    available = {
+        "count": float(count),
+        "mean": mean,
+        "stdev": math.sqrt(variance),
+        "min": min(values),
+        "max": max(values),
+        "range": max(values) - min(values),
+    }
+    if "sem" in requested:
+        available["sem"] = available["stdev"] / math.sqrt(count)
+    return {name: available[name] for name in requested if name in available}
+
+
+def threshold_failures(
+    metric_name: str, summary: dict[str, float], thresholds: dict[str, Any]
+) -> list[str]:
+    failures: list[str] = []
+    for statistic, limits in thresholds.items():
+        if statistic not in summary:
+            failures.append(f"{metric_name}: threshold references missing statistic {statistic}")
+            continue
+        value = summary[statistic]
+        if "min" in limits and value < float(limits["min"]):
+            failures.append(f"{metric_name}.{statistic}={value} below {limits['min']}")
+        if "max" in limits and value > float(limits["max"]):
+            failures.append(f"{metric_name}.{statistic}={value} above {limits['max']}")
+        if "equals" in limits and value != float(limits["equals"]):
+            failures.append(f"{metric_name}.{statistic}={value} != {limits['equals']}")
+    return failures
+
+
+def analyze_stochastic_case(
+    case: dict[str, Any], runs: list[RunResult]
+) -> tuple[list[dict[str, Any]], list[str]]:
+    metrics: list[dict[str, Any]] = []
+    failures: list[str] = []
+    for metric in case.get("metrics", []):
+        metric_name = metric["name"]
+        selector = metric.get("value", "last")
+        values: list[float] = []
+        per_seed: list[dict[str, Any]] = []
+        for run in runs:
+            path = run.run_dir / metric["path"]
+            header, rows = parse_numeric_table(path)
+            index = column_index(header, metric["column"], path)
+            value = select_metric_value(rows, index, selector, path)
+            values.append(value)
+            per_seed.append({"seed": run.seed, "value": value})
+
+        requested = metric.get(
+            "statistics", ["count", "mean", "stdev", "min", "max", "range"]
+        )
+        summary = summarize_values(values, requested)
+        metric_failures = threshold_failures(
+            metric_name, summary, metric.get("thresholds", {})
+        )
+        failures.extend(metric_failures)
+        metrics.append(
+            {
+                "name": metric_name,
+                "path": metric["path"],
+                "column": metric["column"],
+                "value": selector,
+                "per_seed": per_seed,
+                "summary": summary,
+                "thresholds": metric.get("thresholds", {}),
+                "status": "fail" if metric_failures else "pass",
+            }
+        )
+    return metrics, failures
+
+
+def run_stochastic_case(
+    binary: Path,
+    case: dict[str, Any],
+    defaults: dict[str, Any],
+    temp_root: Path,
+) -> tuple[dict[str, Any], list[str]]:
+    expected_exit_code = int(
+        case.get("expected_exit_code", defaults.get("expected_exit_code", 0))
+    )
+    seeds = seed_set(case, defaults)
+    runs: list[RunResult] = []
+    failures: list[str] = []
+
+    for seed in seeds:
+        print(f"Running {case['name']} seed {seed}...")
+        run = run_case(binary, case, defaults, temp_root, f"seed_{seed}", seed)
+        runs.append(run)
+        if run.returncode != expected_exit_code:
+            failures.append(
+                f"{case['name']} seed {seed}: exited {run.returncode}; "
+                f"see {run.stderr_path}"
+            )
+
+    metrics: list[dict[str, Any]] = []
+    if not failures:
+        metrics, failures = analyze_stochastic_case(case, runs)
+
+    report = {
+        "name": case["name"],
+        "type": case_type(case),
+        "description": case.get("description", ""),
+        "seeds": seeds,
+        "runs": [
+            {
+                "seed": run.seed,
+                "run_dir": str(run.run_dir),
+                "returncode": run.returncode,
+            }
+            for run in runs
+        ],
+        "metrics": metrics,
+        "status": "fail" if failures else "pass",
+    }
+    return report, failures
+
+
+def planned_case_commands(
+    binary: Path, case: dict[str, Any], defaults: dict[str, Any]
+) -> list[dict[str, Any]]:
+    if is_stochastic_case(case):
+        return [
+            {"seed": seed, "command": make_command(binary, case, defaults, seed)}
+            for seed in seed_set(case, defaults)
+        ]
+    return [{"seed": case.get("seed", defaults.get("seed")), "command": make_command(binary, case, defaults)}]
+
+
+def write_json_report(path: Path | None, report: dict[str, Any]) -> None:
+    if not path:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def run_with_temp_root(args: argparse.Namespace, fn: Any) -> int:
     if args.keep_temp:
         root = Path(
@@ -403,10 +658,59 @@ def main() -> int:
     manifest = load_manifest(args.manifest)
     cases = selected_cases(manifest, args.case_names)
     defaults = manifest.get("defaults", {})
+    binary_path = resolve_binary_path(args.binary)
 
     if args.list:
+        listed_cases: list[dict[str, Any]] = []
         for case in manifest["cases"]:
-            print(f"{case['name']}: {case.get('description', '')}")
+            case_info = {
+                "name": case["name"],
+                "type": case_type(case),
+                "description": case.get("description", ""),
+            }
+            if is_stochastic_case(case):
+                case_info["seeds"] = seed_set(case, defaults)
+            listed_cases.append(case_info)
+            type_label = f" [{case_info['type']}]" if case_info["type"] else ""
+            print(f"{case['name']}{type_label}: {case.get('description', '')}")
+        write_json_report(
+            args.json_output,
+            {
+                "mode": "list",
+                "manifest": str(args.manifest),
+                "cases": listed_cases,
+                "status": "pass",
+            },
+        )
+        return 0
+
+    if args.dry_run:
+        planned: list[dict[str, Any]] = []
+        for case in cases:
+            commands = planned_case_commands(binary_path, case, defaults)
+            planned.append(
+                {
+                    "name": case["name"],
+                    "type": case_type(case),
+                    "description": case.get("description", ""),
+                    "commands": commands,
+                }
+            )
+            print(f"{case['name']} [{case_type(case)}]")
+            for command in commands:
+                seed = command.get("seed")
+                seed_label = f" seed {seed}:" if seed is not None else ":"
+                print(f"  {seed_label} {' '.join(str(part) for part in command['command'])}")
+        write_json_report(
+            args.json_output,
+            {
+                "mode": "dry-run",
+                "manifest": str(args.manifest),
+                "binary": str(binary_path),
+                "cases": planned,
+                "status": "pass",
+            },
+        )
         return 0
 
     if args.build:
@@ -418,12 +722,26 @@ def main() -> int:
 
     def run_all(temp_root: Path) -> int:
         failures: list[str] = []
+        case_reports: list[dict[str, Any]] = []
         for case in cases:
+            if is_stochastic_case(case):
+                case_report, case_failures = run_stochastic_case(
+                    binary, case, defaults, temp_root
+                )
+                case_reports.append(case_report)
+                if case_failures:
+                    failures.append(f"{case['name']}:")
+                    failures.extend(f"  {failure}" for failure in case_failures)
+                else:
+                    print(f"  PASS {case['name']}")
+                continue
+
             expected_exit_code = int(
                 case.get("expected_exit_code", defaults.get("expected_exit_code", 0))
             )
             case["expected_exit_code"] = expected_exit_code
             print(f"Running {case['name']}...")
+            report_runs: list[dict[str, Any]] = []
 
             if args.baseline_root:
                 baseline_dir = args.baseline_root / case["name"]
@@ -439,10 +757,24 @@ def main() -> int:
                     )
                     continue
                 baseline_dir = baseline.run_dir
+                report_runs.append(
+                    {
+                        "label": "baseline",
+                        "run_dir": str(baseline.run_dir),
+                        "returncode": baseline.returncode,
+                    }
+                )
                 if args.update_baseline:
                     copy_baseline(baseline.run_dir, args.update_baseline / case["name"])
 
             candidate = run_case(binary, case, defaults, temp_root, "candidate")
+            report_runs.append(
+                {
+                    "label": "candidate",
+                    "run_dir": str(candidate.run_dir),
+                    "returncode": candidate.returncode,
+                }
+            )
             if candidate.returncode != expected_exit_code:
                 failures.append(
                     f"{case['name']}: candidate exited {candidate.returncode}; "
@@ -456,16 +788,47 @@ def main() -> int:
                 failures.extend(f"  {failure}" for failure in case_failures)
             else:
                 print(f"  PASS {case['name']}")
+            case_reports.append(
+                {
+                    "name": case["name"],
+                    "type": case_type(case),
+                    "description": case.get("description", ""),
+                    "runs": report_runs,
+                    "status": "fail" if case_failures else "pass",
+                }
+            )
 
         if failures:
             print("\nRegression failures:")
             for failure in failures:
                 print(failure)
+            write_json_report(
+                args.json_output,
+                {
+                    "mode": "run",
+                    "manifest": str(args.manifest),
+                    "binary": str(binary),
+                    "cases": case_reports,
+                    "failures": failures,
+                    "status": "fail",
+                },
+            )
             return 1
 
         if args.update_baseline:
             print(f"\nUpdated baselines in {args.update_baseline}")
         print(f"\nPASS: {len(cases)} regression case(s)")
+        write_json_report(
+            args.json_output,
+            {
+                "mode": "run",
+                "manifest": str(args.manifest),
+                "binary": str(binary),
+                "cases": case_reports,
+                "failures": [],
+                "status": "pass",
+            },
+        )
         return 0
 
     return run_with_temp_root(args, run_all)
