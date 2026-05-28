@@ -2,6 +2,13 @@
   "version": 1,
   "defaults": {
     "seed": 8675309,
+    "stochastic_seed_set": [
+      31001,
+      31002,
+      31003,
+      31004,
+      31005
+    ],
     "timeout_seconds": 120,
     "expected_exit_code": 0
   },
@@ -80,6 +87,88 @@
           "mode": "tolerant",
           "rtol": 1e-12,
           "atol": 1e-12
+        }
+      ]
+    },
+    {
+      "name": "create_destroy_stochastic_seed_set",
+      "type": "stochastic_ensemble",
+      "description": "Fixed seed-set ensemble check for create/destroy stochastic coherence using summary statistics and thresholds.",
+      "sample_dir": "sample_inputs/VALIDATE_SUITE/create_destroy",
+      "stage_files": [
+        "A.mol",
+        "Phos.mol",
+        "create.inp"
+      ],
+      "input_file": "create.inp",
+      "mode": "fresh",
+      "seed_set": [
+        31001,
+        31002,
+        31003,
+        31004,
+        31005
+      ],
+      "patches": [
+        {
+          "path": "create.inp",
+          "pattern": "nItr\\s*=\\s*60000",
+          "replace": "nItr = 60"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "timeWrite\\s*=\\s*2",
+          "replace": "timeWrite = 10"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "trajWrite\\s*=\\s*100000",
+          "replace": "trajWrite = 30"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "restartWrite\\s*=\\s*100000",
+          "replace": "restartWrite = 30"
+        },
+        {
+          "path": "create.inp",
+          "pattern": "checkPoint\\s*=\\s*10000000",
+          "replace": "checkPoint = 30"
+        }
+      ],
+      "metrics": [
+        {
+          "name": "final_created_species_count",
+          "path": "DATA/copy_numbers_time.dat",
+          "column": 1,
+          "value": "last",
+          "statistics": [
+            "count",
+            "mean",
+            "stdev",
+            "min",
+            "max",
+            "range",
+            "sem"
+          ],
+          "thresholds": {
+            "count": {
+              "equals": 5
+            },
+            "mean": {
+              "min": 0,
+              "max": 500
+            },
+            "min": {
+              "min": 0
+            },
+            "max": {
+              "max": 500
+            },
+            "range": {
+              "max": 500
+            }
+          }
         }
       ]
     },

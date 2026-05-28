@@ -31,7 +31,12 @@ List cases or run only one case:
 ```sh
 python3 tests/regression/run_regression.py --list
 python3 tests/regression/run_regression.py --case create_destroy_fresh_small
+python3 tests/regression/run_regression.py --dry-run --case create_destroy_stochastic_seed_set
 ```
+
+Use `--json-output <path>` with `--list`, `--dry-run`, or a real run to emit a
+machine-readable report containing selected cases, planned commands, run
+directories, stochastic summaries, threshold status, and failures.
 
 ## Baselines
 
@@ -65,6 +70,29 @@ patches for shortening validation samples, and file-level comparisons.
 
 Both modes support `ignore_lines_matching` for volatile text such as dates,
 command paths, and timing lines.
+
+## Stochastic seed-set checks
+
+Stochastic cases use `type: "stochastic_ensemble"` and run the same shortened
+sample once for each seed in `seed_set`. They do not compare byte-for-byte
+outputs. Instead, they read numeric output tables, extract named metrics, compute
+summary statistics across the fixed seed set, and validate inclusive thresholds.
+
+Metric fields:
+
+- `path`: output file relative to each run directory, for example
+  `DATA/copy_numbers_time.dat`.
+- `column`: zero-based numeric column index or an exact header name.
+- `value`: row/series selector; supported values are `first`, `last`, `min`,
+  `max`, and `mean`.
+- `statistics`: any of `count`, `mean`, `stdev`, `min`, `max`, `range`, `sem`.
+- `thresholds`: per-statistic checks using `min`, `max`, or `equals`.
+
+The initial Phase 1 stochastic case is
+`create_destroy_stochastic_seed_set`. It runs a five-seed ensemble and checks
+the final created-species count stays finite, nonnegative, and within the
+configured envelope. The JSON report includes per-seed metric values and the
+computed ensemble summary.
 
 ## Restart support
 
