@@ -1286,6 +1286,10 @@ int main(int argc, char *argv[]) {
 
     // Now we have to check for overlap!!!
     for (auto &mol : moleculeList) {
+      // Destroyed molecules remain as empty slots until end-of-step compaction.
+      if (mol.isEmpty)
+        continue;
+
       // Now track each complex (ncrosscom), and test for overlap of all
       // proteins in that complex before performing final position updates.
       // determine RS3Dinput
