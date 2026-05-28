@@ -1,0 +1,39 @@
+# NERDSS C++ formatting policy.
+#
+# This is based on Google style for the Phase 2 upgrade tooling work. Do not
+# bulk-format existing src/include code when introducing or changing this file;
+# use tools/format_changed_files.sh to keep formatting diffs scoped.
+BasedOnStyle: Google
+Language: Cpp
+Standard: c++11
+ColumnLimit: 100
+IndentWidth: 2
+ContinuationIndentWidth: 4
+AccessModifierOffset: -1
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AllowAllArgumentsOnNextLine: true
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 4
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+IncludeBlocks: Preserve
+IndentCaseLabels: true
+NamespaceIndentation: None
+PointerAlignment: Left
+ReflowComments: true
+SortIncludes: CaseSensitive
+SpaceBeforeParens: ControlStatements
+SpacesInAngles: false
+SpacesInContainerLiterals: false
