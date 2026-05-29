@@ -11,3 +11,7 @@ new_version/test.nosync
 .vscode/
 obj/
 /PDB
+/__pycache__/
+__pycache__/
+*.py[cod]
+/benchmark_results/

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "description": "NERDSS upgrade serial benchmark suite. Cases copy existing sample inputs into isolated work directories and apply benchmark-only parameter overrides there.",
+  "defaults": {
+    "timeout_seconds": 300,
+    "seed": 12345,
+    "parameter_overrides": {
+      "timeWrite": "1000",
+      "trajWrite": "1000000",
+      "restartWrite": "1000000",
+      "pdbWrite": "1000000",
+      "transitionWrite": "1000"
+    }
+  },
+  "cases": [
+    {
+      "id": "small_homotrimer",
+      "label": "Small 3D homotrimer association",
+      "size": "small",
+      "source_dir": "sample_inputs/VALIDATE_SUITE/homoTrimer",
+      "input_file": "parmTri6.inp",
+      "timeout_seconds": 120,
+      "parameter_overrides": {
+        "nItr": "2000",
+        "timeWrite": "500",
+        "transitionWrite": "500"
+      }
+    },
+    {
+      "id": "medium_michaelis_menten",
+      "label": "Medium Michaelis-Menten reaction network",
+      "size": "medium",
+      "source_dir": "sample_inputs/VALIDATE_SUITE/michaelis_menten",
+      "input_file": "michaelis.inp",
+      "timeout_seconds": 180,
+      "parameter_overrides": {
+        "nItr": "5000",
+        "timeWrite": "500"
+      }
+    },
+    {
+      "id": "representative_implicit_lipid",
+      "label": "Representative implicit lipid binding",
+      "size": "representative",
+      "source_dir": "sample_inputs/VALIDATE_SUITE/implicit_lipid",
+      "input_file": "parms.inp",
+      "timeout_seconds": 300,
+      "parameter_overrides": {
+        "nItr": "10000",
+        "timeWrite": "1000",
+        "trajWrite": "1000000",
+        "restartWrite": "1000000"
+      }
+    },
+    {
+      "id": "large_clathrin_short",
+      "label": "Large clathrin assembly smoke benchmark",
+      "size": "large",
+      "source_dir": "sample_inputs/VALIDATE_SUITE/clathrin",
+      "input_file": "parms_clath_kon1uM.inp",
+      "timeout_seconds": 600,
+      "parameter_overrides": {
+        "nItr": "2000",
+        "timeWrite": "500",
+        "trajWrite": "1000000",
+        "restartWrite": "1000000"
+      }
+    }
+  ]
+}
