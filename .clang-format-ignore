@@ -1,0 +1,26 @@
+# Generated documentation and copied web assets.
+docs/html/**
+
+# Notebooks and binary/reference assets are not source-formatting targets.
+**/*.ipynb
+**/*.pdf
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.svg
+**/*.eps
+**/*.docx
+
+# Vendored or external code must keep upstream formatting.
+third_party/**
+
+# Build and IDE output.
+build/**
+cmake-build-debug/**
+cmake-build-release/**
+bin/**
+obj/**
+.git/**
+.idea/**
+.vscode/**
