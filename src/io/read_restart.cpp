@@ -2,6 +2,7 @@
 #include "tracing.hpp"
 #include <chrono>
 #include <ctime>
+#include <sstream>
 
 void read_restart(long long int& simItr, std::ifstream& restartFile, Parameters& params, SimulVolume& simulVolume,
     std::vector<Molecule>& moleculeList, std::vector<Complex>& complexList,
@@ -120,18 +121,22 @@ void read_restart(long long int& simItr, std::ifstream& restartFile, Parameters&
             restartFile >> params.clusterOverlapCheck;
             restartFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-            restartFile.ignore(std::numeric_limits<std::streamsize>::max(), '=');
-            restartFile >> params.rngwrite;
-            restartFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
             unsigned long lastUpdateTransitionSize { 0 };
-            restartFile >> lastUpdateTransitionSize;
+            std::string nextLine;
+            std::getline(restartFile, nextLine);
+            if (nextLine.find('=') != std::string::npos) {
+                std::istringstream rngLine { nextLine.substr(nextLine.find('=') + 1) };
+                rngLine >> params.rngwrite;
+                std::getline(restartFile, nextLine);
+            }
+
+            std::istringstream transitionLine { nextLine };
+            transitionLine >> lastUpdateTransitionSize;
             for (unsigned itr { 0 }; itr < lastUpdateTransitionSize; ++itr) {
                 int index { 0 };
-                restartFile >> index;
+                transitionLine >> index;
                 Parameters::lastUpdateTransition.push_back(index);
             }
-            restartFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
         std::cout << "restart write, pdbWrite: " << params.restartWrite << ' ' << params.pdbWrite << std::endl;
         /*	std::cout<<"READ IN SUB volume PARTITIONING from restart file"<<std::endl;
