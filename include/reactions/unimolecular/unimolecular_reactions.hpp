@@ -70,14 +70,9 @@ void correct_structure(const std::vector<Molecule> &moleculeList, Complex &compl
                        const std::vector<ForwardRxn> &forwardRxns);
 
 bool break_interaction(long long int iter, size_t relIface1, size_t relIface2, Molecule& reactMol1, Molecule& reactMol2,
-// <<<<<<< HEAD
-//     const BackRxn& currRxn, const std::vector<ForwardRxn> &forwardRxns, std::vector<Molecule>& moleculeList,
-//     std::vector<Complex>& complexList, std::vector<MolTemplate>& molTemplateList, int ILindexMol);
-// =======
     const BackRxn& currRxn, std::vector<Molecule>& moleculeList,
     std::vector<Complex>& complexList, std::vector<MolTemplate>& molTemplateList, int ILindexMol, const ForwardRxn &conjForwardRxn, 
     bool &breakLinkComplex, double timeStep, std::ofstream& assocDissocFile);
-// >>>>>>> master
 
 bool determine_parent_complex(int pro1Index, int pro2Index, int newComIndex, std::vector<Molecule>& moleculeList,
     std::vector<Complex>& complexList);

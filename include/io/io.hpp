@@ -94,14 +94,6 @@ void write_complex_components(long long int simItr, std::ofstream& complexFile, 
     std::vector<Molecule>& moleculeList, std::vector<Complex>& complexList,
     const std::vector<MolTemplate>& molTemplateList);
 
-void write_bonded_complex_json(const std::string filename,
-    std::vector<Molecule>& moleculeList,
-    const std::vector<Complex>& complexList,
-    const std::vector<MolTemplate>& molTemplateList,
-    const std::vector<ForwardRxn>& forwardRxns,
-    const std::vector<BackRxn>& backRxns,
-    const Membrane& membraneObject);
-
 /*! \ingroup IO
  * \brief Writes a plain text restart file at intervals specified in the Parameters file.
  *
@@ -211,3 +203,9 @@ void write_output(long long int simItr, Parameters& params,std::string trajFileN
     MDTimer::time_point& totalTimeStart, std::map<std::string, int>& observablesList, std::ofstream& assemblyfile); // for mpi version
 
 void merge_outputs(int totalrank, int molTemplateNum); // for mpi version
+
+// for outputting structural info for Brownian Dynamics of Flexible Assemblies with Fourier Space Membrane (BDFAFSpaM)
+void write_bonded_complex_json(const std::string filename, std::vector<Molecule>& moleculeList,
+    const std::vector<Complex>& complexList, const std::vector<MolTemplate>& molTemplateList,
+    const std::vector<ForwardRxn>& forwardRxns, const std::vector<BackRxn>& backRxns,
+    const Membrane& membraneObject);

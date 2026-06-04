@@ -124,9 +124,13 @@ void read_restart(long long int& simItr, std::ifstream& restartFile, Parameters&
             unsigned long lastUpdateTransitionSize { 0 };
             std::string nextLine;
             std::getline(restartFile, nextLine);
-            if (nextLine.find('=') != std::string::npos) {
-                std::istringstream rngLine { nextLine.substr(nextLine.find('=') + 1) };
-                rngLine >> params.rngwrite;
+            while (nextLine.find('=') != std::string::npos) {
+                std::istringstream valueLine { nextLine.substr(nextLine.find('=') + 1) };
+                if (nextLine.find("RNGwrite") != std::string::npos) {
+                    valueLine >> params.rngwrite;
+                } else if (nextLine.find("bondedComplexWrite") != std::string::npos) {
+                    valueLine >> params.bondedComplexWrite;
+                }
                 std::getline(restartFile, nextLine);
             }
 

@@ -20,7 +20,7 @@ void determine_1D_bimolecular_reaction_probability(
   // Dr2 = 2.0 * biMolData.magMol2 * (1.0 - cf);
   // biMolData.Dtot += (Dr1 + Dr2) / (4.0 * params.timeStep); // add in contributions from rotation
 
-  
+
   // the maximum distance along x axis for reaction to occur
   // for site + site or protein + protein, RMax = 4 * sqrt(2 * Dtot * dt) + sigma
   double RMax{4.0 * sqrt(2.0 * biMolData.Dtot * params.timeStep) + forwardRxns[rxnIndex].bindRadius};
@@ -28,14 +28,14 @@ void determine_1D_bimolecular_reaction_probability(
   // Assume D is isotropic in 3D so that Dtot3D = Dtot1D
   double RMax3D{3.0 * sqrt(6.0 * biMolData.Dtot * params.timeStep) + forwardRxns[rxnIndex].bindRadius};
   // for protein binding to DNA sites, consider Sigma_1D = 0 when calculating RMax and reaction rate
-  // protein + DNA site 
+  // protein + DNA site
   // TODO: use xor in future
   // proteins always bind on top of DNA sites. Therefore, we do not need to add the binding radius here.
   // Namely, we assume sigma_x = 0
   bool bindfrom3Dto1D {false};
   if (moleculeList[biMolData.pro1Index].isPromoter && !moleculeList[biMolData.pro2Index].isPromoter) {
     RMax = 4.0 * sqrt(2.0 * biMolData.Dtot * params.timeStep);
-    bindfrom3Dto1D = true; 
+    bindfrom3Dto1D = true;
   } else if (!moleculeList[biMolData.pro1Index].isPromoter && moleculeList[biMolData.pro2Index].isPromoter) {
     RMax = 4.0 * sqrt(2.0 * biMolData.Dtot * params.timeStep);
     bindfrom3Dto1D = true;
@@ -47,7 +47,7 @@ void determine_1D_bimolecular_reaction_probability(
   //     biMolData.relIface2, rxnIndex, rateIndex, isStateChangeBackRxn, sep, R1,
   //     RMax, complexList, forwardRxns[rxnIndex], moleculeList, false)};
 
-  // We do not use get_distance here since we need two Rmax values but get_distance 
+  // We do not use get_distance here since we need two Rmax values but get_distance
   // only takes one Rmax as input
 
   // calculate the 3D distance to determine if the reaction is on the same fiber
@@ -68,9 +68,9 @@ void determine_1D_bimolecular_reaction_probability(
   // if (R1 <= RMax && R3D > RMax3D) {
   //   std::cout << "Molecules not on the same fiber, but dX < Rmax1D." << std::endl;
   //   std::cout << " R1: " << R1 << " RMax: " << RMax << " R3D: " << R3D << " RMax3D: " << RMax3D << std::endl;
-  //   std::cout << " Mol1Index: " << biMolData.pro1Index << " Mol2Index: " << biMolData.pro2Index << std::endl; 
+  //   std::cout << " Mol1Index: " << biMolData.pro1Index << " Mol2Index: " << biMolData.pro2Index << std::endl;
   // }
-  
+
   // Make sure R1 is at least bindRadius
   if (bindfrom3Dto1D) {
     // when binding from 3D to 1D, set any R1 is acceptable (sigma_x = 0)
@@ -79,7 +79,7 @@ void determine_1D_bimolecular_reaction_probability(
       R1 = forwardRxns[rxnIndex].bindRadius;
     }
   }
-    
+
 
   if (withinRmax) {
     // std::cout << "RMax3D " << RMax3D << " Mol1Index: " << biMolData.pro1Index << " Mol2Index: " << biMolData.pro2Index << std::endl;
@@ -99,14 +99,14 @@ void determine_1D_bimolecular_reaction_probability(
     // moleculeList[biMolData.pro2Index].display_all();
     moleculeList[biMolData.pro1Index].probvec.push_back(0);
     moleculeList[biMolData.pro2Index].probvec.push_back(0);
-  } 
+  }
 
   // if (moleculeList[biMolData.pro1Index].isDissociated == true ||
   //     moleculeList[biMolData.pro2Index].isDissociated == true) {
   //   std::cout << "One of the molecules is dissociated. Skip reaction probability calculation." << std::endl;
-  //   std::cout << " Mol1Index: " << biMolData.pro1Index << " Mol2Index: " << biMolData.pro2Index << std::endl; 
+  //   std::cout << " Mol1Index: " << biMolData.pro1Index << " Mol2Index: " << biMolData.pro2Index << std::endl;
   // }
-  
+
   if (moleculeList[biMolData.pro1Index].isDissociated != true &&
       moleculeList[biMolData.pro2Index].isDissociated != true) {
     /*This movestat check is if you allow just dissociated proteins to avoid
@@ -118,10 +118,16 @@ void determine_1D_bimolecular_reaction_probability(
 
       // declare intrinsic binding rate of 1D->1D case.
       double kact{forwardRxns[rxnIndex].rateList[rateIndex].rate / forwardRxns[rxnIndex].area3Dto1D};
-      if (forwardRxns[rxnIndex].isSymmetric == false)
-        kact /= 2.0; // for A(a)+B(b)->A(a!).B(b!) case
-        // This is different from 3D case since molecules can only approach from one side in 1D
-        // This is irrelevant of bypassing is allowed or not.
+      // if (forwardRxns[rxnIndex].isSymmetric == false)
+      //   kact /= 2.0;
+      // Our model is excact for 1D semi-infinite associations
+      //   Suppose A and B molecules
+      //   1) One A at the end and all B molecules can only approach from one side => correct
+      //   2) One A in the middle and B molecules can approach from two sieds => kon * 2
+      //   3) Symmetric case A + A => A-A, molecules are approached two-sided => kon * 2,
+      //      but the combination factor requires [A]/2, so the overall reaction rate is still kon * [A] * [A], which is correct.
+      // This is different from 3D case since molecules can only approach from one side in 1D
+      // TODO: Is this irrelevant of bypassing is allowed or not?
 
       double currnorm{1.0};
       double p0_ratio{1.0};
@@ -178,8 +184,8 @@ void determine_1D_bimolecular_reaction_probability(
       //     std::cout << "In determine_1D_prob proB " << proB << " proA " << proA
       //           << " R1 " << R1 << " kact " << kact << " rxnProb " << rxnProb
       //           << " p0_ratio " << p0_ratio << " currnorm " << currnorm << std::endl;
-      //   } 
-      // } 
+      //   }
+      // }
       // END
 
       moleculeList[biMolData.pro1Index].probvec.back() = rxnProb * currnorm;

@@ -20,7 +20,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
                    std::vector<Complex> &complexList, Membrane &membraneObject,
                    const std::vector<ForwardRxn> &forwardRxns,
                    const std::vector<BackRxn> &backRxns, std::ofstream& assocDissocFile) {
-  
+
   // bool monitor{false};
   // if (iter == 200000295){
     // if (reactMol1.index == 32 || reactMol2.index == 32) {
@@ -148,7 +148,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
         displaceFrac = (sigmaMag - currRxn.bindRadius) / sigmaMag;
       }
       // if both in 1D, ignore the y,z-component
-    } 
+    }
     // if both in 1D
     else if (reactCom1.onFiber == true && reactCom2.onFiber == true) {
       isOnFiber = true;
@@ -160,19 +160,27 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
       } else {
         double sigmaMag = sqrt((sigma.x * sigma.x));
         if (!reactMol1.isPromoter && reactMol2.isPromoter) {
-          // if one of the proteins is a promoter
+          // if one of the molecules is a promoter
           // Move two molecules to the same x coordinate
           is1DSiteBinding = true;
           displaceFrac = 1.0;
         } else if (reactMol1.isPromoter && !reactMol2.isPromoter) {
           is1DSiteBinding = true;
           displaceFrac = 1.0;
+        } else if (reactMol1.isPromoter && reactMol2.isPromoter) {
+          // if both molecules are promoters
+          // This happens when users set molecules as promoters to perform 1D binding
+          //   In this case, we don't need to shuffle the relative position of two molecules
+          displaceFrac = (sigmaMag - currRxn.bindRadius) / sigmaMag;
+          // std::cout << "frac: " << displaceFrac << " rand: " << randDouble << std::endl;
         } else {
-          // both proteins are not promoters
+          // both molecules are not promoters
           // randomly move to the left or the right side
+          // This makes it possible for a dimer forming on fiber to bind two bindings ites
+          //   without this, the second molecule has to come at the same side to be able to bind to a
+          //   bidning site when it forms a dimer.
           double randDouble = rand_gsl() < 0.5 ? 1.0 : -1.0;
           displaceFrac = (sigmaMag - randDouble * currRxn.bindRadius) / sigmaMag;
-          // displaceFrac = (sigmaMag - currRxn.bindRadius) / sigmaMag;
           // std::cout << "frac: " << displaceFrac << " rand: " << randDouble << std::endl;
         }
       }
@@ -211,16 +219,16 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
 
     if (isOnFiber == true) {
       if (is1DSiteBinding) {
-        // if one of the proteins is a promoter
+        // if one of the molecules is a promoter
         // Move two molecules to the same x coordinate
         transVec1.x = -sigma.x * (reactCom1.D.x / DxSum) * displaceFrac;
         transVec2.x = sigma.x * (reactCom2.D.x / DxSum) * displaceFrac;
       } else{
         // Complex conformation has first priority. Fiber binding is relaxed.
-        // keep the slow protein on fiber (only move along x direction)
-        // move the other reactant (fast protein) freely in 3 dimension
-        // The fast protein will be pushed back to fiber in orientation correction.
-        //TODO: For explicit model, if the Complex conformation requires one protein to detach from the fiber,
+        // keep the slow molecule on fiber (only move along x direction)
+        // move the other reactant (fast molecule) freely in 3 dimension
+        // The fast molecule will be pushed back to fiber in orientation correction.
+        //TODO: For explicit model, if the Complex conformation requires one molecule to detach from the fiber,
         //      the binding site (which should be always on fiber) will also be moved away
         if (slowPro == reactMol1.index){
           if (abs(reactCom1.D.x)<1e-6){
@@ -260,7 +268,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
           transVec2.z = 0.0;
         }
       }
-      
+
     } else {
       transVec1.x = -sigma.x * (reactCom1.D.x / DxSum) * displaceFrac;
       transVec1.y = -sigma.y * (reactCom1.D.y / DySum) * displaceFrac;
@@ -312,14 +320,14 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
       /*If both molecules are points, no orientations to specify*/
       //   std::cout << " Move two point particles to contact along current
       //   separation vector, NO ORIENTATION \n";
-    } else { 
+    } else {
       // Not both are points
       // rotate the proteins ignoring all geometry restrictions
       /* THETA */
       // std::cout << std::setw(8) << std::setfill('-') << ' ' << std::endl
       //           << "THETA 1" << std::endl
       //           << std::setw(8) << ' ' << std::setfill(' ') << std::endl;
-     
+
 
       if (!std::isnan(currRxn.assocAngles.theta1))
         theta_rotation(reactIface1, reactIface2, reactMol1, reactMol2,
@@ -330,7 +338,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
         theta_rotation(reactIface2, reactIface1, reactMol2, reactMol1,
                        currRxn.assocAngles.theta2, reactCom2, reactCom1,
                        moleculeList);
-      
+
       /* OMEGA */
       // if protein has theta M_PI, uses protein norm instead of com_iface
       // vector std::cout << std::setw(6) << std::setfill('-') << ' ' <<
@@ -342,7 +350,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
                        reactMol2, reactCom1, reactCom2,
                        currRxn.assocAngles.omega, currRxn, moleculeList,
                        molTemplateList);
-      } 
+      }
       // std::cout << "P1 or P2 is a rod-type protein, no dihedral for
       // associated complex." << std::endl;
 
@@ -357,7 +365,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
                      currRxn.assocAngles.phi1, currRxn, moleculeList,
                      molTemplateList);
       }
-      
+
       // std::cout << "P1 has no valid phi angle." << std::endl;
 
       // PHI 2
@@ -370,7 +378,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
                      currRxn.assocAngles.phi2, currRxn, moleculeList,
                      molTemplateList);
       } // else
-      
+
       // std::cout << "P2 has no valid phi angle." << std::endl;
     } // end of if points.
 
@@ -381,7 +389,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
     com_of_two_tmp_complexes(reactCom1, reactCom1, afterRotateCOM1, moleculeList);
     Coord afterRotateCOM2;
     com_of_two_tmp_complexes(reactCom2, reactCom2, afterRotateCOM2, moleculeList);
-  
+
 
     // std::cout << "Diplace during rotating: " << std::endl;
     // reactMol1.display_assoc_icoords(std::to_string(reactMol1.index));
@@ -400,7 +408,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
 
     /*FINISHED ROTATING, NO CONSTRAINTS APPLIED TO SURFACE NOR FIBER REACTIONS*/
     Coord finalCOM;
-    com_of_two_tmp_complexes(reactCom1, reactCom2, finalCOM, moleculeList); 
+    com_of_two_tmp_complexes(reactCom1, reactCom2, finalCOM, moleculeList);
     // com of c1+c2 (final (tmp) coordinates).
 
     Coord preCOM;
@@ -425,6 +433,13 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
         Coord pivot;
         // also translate the slowPro back to its same COM.
         // This step may report warning of "Attempted dot product with vector of magnitude 0."
+        /*
+        TODO: for fibers, this can be redundant and cause zero vector issue.
+          Actually, for associations only on fibers (isOnFiber), we can skip this step.
+          However, we have to make sure the orientations of two proteins before association are correct,
+          otherwise the binding site may be facing the wrong direction and cause failed association.
+          For now, we keep this for all cases to make sure the orientation is correct, but we can optimize this in the future.
+        */
         if (slowPro == reactMol1.index) {
           memRot = save_mem_orientation(
               memProtein, reactMol1, molTemplateList[reactMol1.molTypeIndex]);
@@ -443,7 +458,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
         // std::cout << " IS ON MEMBRANE/Fiber, CORRECT ORIENTATION ! " << std::endl;
         // reactMol1.display_assoc_icoords(std::to_string(reactMol1.index));
         // reactMol2.display_assoc_icoords(std::to_string(reactMol2.index));
-        
+
       // } // checking all points
     }
 
@@ -506,7 +521,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
       for (auto &mp : reactCom2.memberList)
         moleculeList[mp].update_association_coords(dtrans);
 
-      
+
       // std::cout << "TRANSLATE SLOWPRO TO ORIG SIGMA COM BY SHIFTING: " << std::endl;
       //   reactMol1.display_assoc_icoords(std::to_string(reactMol1.index));
       //   reactMol2.display_assoc_icoords(std::to_string(reactMol2.index));
@@ -583,14 +598,14 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
     */
     for (auto &mp : reactCom2.memberList) {
       if (moleculeList[mp].isPromoter == true) {
-        Vector dtrans{0, -moleculeList[mp].tmpComCoord.y + moleculeList[mp].comCoord.y, 
+        Vector dtrans{0, -moleculeList[mp].tmpComCoord.y + moleculeList[mp].comCoord.y,
         -moleculeList[mp].tmpComCoord.z + moleculeList[mp].comCoord.z};
         moleculeList[mp].update_association_coords(dtrans);
       }
     }
     for (auto &mp : reactCom1.memberList) {
       if (moleculeList[mp].isPromoter == true) {
-        Vector dtrans{0, -moleculeList[mp].tmpComCoord.y + moleculeList[mp].comCoord.y, 
+        Vector dtrans{0, -moleculeList[mp].tmpComCoord.y + moleculeList[mp].comCoord.y,
         -moleculeList[mp].tmpComCoord.z + moleculeList[mp].comCoord.z};
         moleculeList[mp].update_association_coords(dtrans);
       }
@@ -662,7 +677,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
         if (moleculeList[mp].isLipid == true) {
           if (moleculeList[mp].tmpComCoord.z <
               -membraneObject.waterBox.z / 2.0) {
-            double ztmp = (-membraneObject.waterBox.z / 2.0) - moleculeList[mp].tmpComCoord.z; 
+            double ztmp = (-membraneObject.waterBox.z / 2.0) - moleculeList[mp].tmpComCoord.z;
             // lipid COM is below box bottom
             if (ztmp > zchg) {
               zchg = ztmp; // largest dip below membrane
@@ -671,7 +686,7 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
           }
           if (moleculeList[mp].tmpComCoord.z - 0.01 >
               -membraneObject.waterBox.z / 2.0) {
-            double ztmp = (-membraneObject.waterBox.z / 2.0) - moleculeList[mp].tmpComCoord.z; 
+            double ztmp = (-membraneObject.waterBox.z / 2.0) - moleculeList[mp].tmpComCoord.z;
             // lipid COM is ABOVE box bottom, here ztmp is negtive
             // std::cout << "WARNING, during associate, LIPID IS ABOVE MEMBRANE
             // BY " << -ztmp << '\n'; move the lipid back to the bottom
@@ -990,8 +1005,8 @@ void associate_box(long long int iter, int ifaceIndex1, int ifaceIndex2,
     reactMol2.interfaceList[ifaceIndex2].interaction.conjBackRxn = currRxn.conjBackRxnIndex;
   }
   if (assocDissocFile.is_open()) {
-      assocDissocFile << "ITR:" << iter << "," << "BOND," 
-      << molTemplateList[reactMol1.molTypeIndex].molName << "," << reactMol1.index << "," << ifaceIndex1 << "," 
+      assocDissocFile << "ITR:" << iter << "," << "BOND,"
+      << molTemplateList[reactMol1.molTypeIndex].molName << "," << reactMol1.index << "," << ifaceIndex1 << ","
       << molTemplateList[reactMol2.molTypeIndex].molName << "," << reactMol2.index << "," << ifaceIndex2 << std::endl;
   }
   reactMol1.interfaceList[ifaceIndex1].isBound = true;
