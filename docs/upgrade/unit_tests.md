@@ -31,6 +31,8 @@ cmake --build build-gtest --target nerdss_gtest_smoke
 ./build-gtest/nerdss_gtest_smoke
 cmake --build build-gtest --target nerdss_gtest_vector_coord
 ./build-gtest/nerdss_gtest_vector_coord
+cmake --build build-gtest --target nerdss_gtest_rotation_math
+./build-gtest/nerdss_gtest_rotation_math
 ```
 
 `NERDSS_ENABLE_GTEST=ON` requires a discoverable Google Test package. On Ubuntu
@@ -46,6 +48,11 @@ without reintroducing the custom test executable.
 The first converted low-risk test target is `nerdss_gtest_vector_coord`, which
 ports the old Coord/Vector helper assertions to Google Test without adding new
 scientific or fixture-heavy coverage.
+
+The next low-risk deterministic math target is `nerdss_gtest_rotation_math`,
+which pins quaternion algebra, quaternion vector rotation, and legacy Euler
+matrix rotation behavior before those kernels are moved behind MathEngine-style
+interfaces.
 
 ## Superseded CTest Work
 

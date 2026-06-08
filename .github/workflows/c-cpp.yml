@@ -37,6 +37,12 @@ jobs:
     - name: Run Google Test vector/coord target
       run: ./build-gtest/nerdss_gtest_vector_coord
 
+    - name: Build Google Test rotation math target
+      run: cmake --build build-gtest --target nerdss_gtest_rotation_math
+
+    - name: Run Google Test rotation math target
+      run: ./build-gtest/nerdss_gtest_rotation_math
+
     - name: Clean before MPI build
       run: make clean
 

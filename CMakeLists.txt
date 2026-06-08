@@ -85,4 +85,16 @@ if(NERDSS_ENABLE_GTEST)
     target_link_libraries(nerdss_gtest_vector_coord
         ${NERDSS_GTEST_MAIN_TARGET}
     )
+
+    add_executable(nerdss_gtest_rotation_math
+        tests/gtest/rotation_math_test.cpp
+        src/classes/class_Coord.cpp
+        src/classes/class_Quat.cpp
+        src/classes/class_Vector.cpp
+        src/math/matrix_functions.cpp
+    )
+    target_include_directories(nerdss_gtest_rotation_math PRIVATE include)
+    target_link_libraries(nerdss_gtest_rotation_math
+        ${NERDSS_GTEST_MAIN_TARGET}
+    )
 endif()
