@@ -53,6 +53,9 @@ Commands:
 ```sh
 git diff --check HEAD
 tools/format_changed_files.sh --check --base HEAD
+c++ -std=c++11 -Iinclude -c src/parser/remove_comment.cpp -o /tmp/nerdss-remove-comment.o
+c++ -std=c++11 -Iinclude -c src/parser/read_boolean.cpp -o /tmp/nerdss-read-boolean.o
+c++ -std=c++11 -Iinclude -c src/parser/parse_input_array.cpp -o /tmp/nerdss-parse-input-array.o
 cmake -S . -B /tmp/nerdss-gtest-default
 cmake --build /tmp/nerdss-gtest-default --target nerdss --parallel 4
 cmake -S . -B /tmp/nerdss-gtest-on -DNERDSS_ENABLE_GTEST=ON
@@ -67,6 +70,8 @@ Results:
 - Passed: `git diff --check HEAD`.
 - Passed: `tools/format_changed_files.sh --check --base HEAD`; the helper
   reported no tracked C/C++ files to format before staging this new test file.
+- Passed: standalone object compile probes for `remove_comment.cpp`,
+  `read_boolean.cpp`, and `parse_input_array.cpp`.
 - Passed: default CMake configure in `/tmp/nerdss-gtest-default`.
 - Passed: default CMake build target `nerdss`.
 - Failed as expected locally: `NERDSS_ENABLE_GTEST=ON` configure could not find
