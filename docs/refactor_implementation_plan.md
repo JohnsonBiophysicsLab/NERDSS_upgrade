@@ -424,20 +424,28 @@ Dependencies:
 ### Agent Q: Unit Test Framework
 
 Scope:
-- Choose C++ test framework, for example GoogleTest or Catch2, considering
-  dependency simplicity in GitHub Actions.
-- Add unit tests for math primitives, parser helpers, format converters, error
-  messages, and small pure functions first.
+- Adopt Google Test as the unit and integration test framework.
+- Style all new and migrated C++ tests according to the Google C++ Style Guide.
+- Halt new custom CTest/std-library unit and integration test implementation
+  until the Google Test harness is in place.
+- Re-spin useful existing CTest-era assertions as Google Test cases only after
+  the harness, dependency bootstrap, and CI command model are approved.
 - Avoid testing scientific behavior only through mocks; keep numerical behavior
-  anchored to regression tests.
+  anchored to regression or validation examples.
 
 Deliverables:
 - `tests/unit/` structure.
-- CMake test target with `ctest`.
-- Initial unit tests for low-risk modules.
+- `tests/integration/` structure for slower pipeline and validation examples.
+- Google Test CMake target(s) and local commands.
+- GitHub Actions job that runs Google Test targets and reports failures.
+- Migration notes identifying CTest-era branches/PRs that are superseded or need
+  assertion conversion.
 
 Acceptance criteria:
-- Unit tests run locally and in CI.
+- Google Test unit tests run locally and in CI.
+- Integration tests are separated from fast unit tests and can be selected by
+  label, target, or workflow job.
+- No new custom CTest/std-library tests are added while the migration is active.
 - Tests do not require large sample assets unless marked integration.
 
 Dependencies:
@@ -449,6 +457,8 @@ Dependencies:
 Scope:
 - Add GitHub Actions workflows for formatting, build, unit tests, smoke tests,
   sanitizer build, and selected regression tests.
+- Replace CTest-era unit/integration invocations with Google Test targets once
+  Agent Q lands the harness.
 - Cache dependencies where appropriate.
 - Include Linux first; add macOS once build times and dependencies are stable.
 - Keep slow stochastic and benchmark suites manual or scheduled.
@@ -460,6 +470,7 @@ Deliverables:
 
 Acceptance criteria:
 - PRs cannot merge when format, build, unit, or smoke tests fail.
+- CI does not depend on the superseded custom CTest unit executable.
 - Regression failures report which files differ and how.
 
 Dependencies:

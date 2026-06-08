@@ -4,6 +4,34 @@ This log records coordination decisions for the NERDSS upgrade. Add entries in
 reverse chronological order and link follow-up PRs or validation artifacts when
 they exist.
 
+## 2026-06-08: Migrate Tests From CTest To Google Test
+
+Status: Accepted for current workflow
+
+Owners: Upgrade coordination team, Agent Q, Agent R
+
+Decision:
+- Halt new custom CTest/std-library unit and integration test implementation.
+- Migrate the unit and integration test framework to Google Test.
+- Style new and migrated C++ tests according to the Google C++ Style Guide.
+- Close CTest-era validation-integration aggregation PRs as superseded, while
+  preserving branches so useful implementation changes can be re-spun.
+
+Rationale:
+- Google Test gives a standard C++ testing vocabulary, clearer assertions, and
+  better long-term maintainability than the temporary custom CTest executable.
+- Keeping non-test implementation branches available avoids losing useful
+  diagnostics, MathEngine, ProbabilityEngine, and I/O refactor work.
+
+Consequences:
+- Future implementation PRs should avoid adding or expanding custom CTest test
+  files.
+- Existing assertions in `tests/unit/test_diagnostics.cpp` and
+  `tests/unit/test_vector_coord.cpp` should be converted to Google Test before
+  review if they are carried forward.
+- CI and coverage scripts must be updated to run Google Test targets before they
+  become merge gates.
+
 ## 2026-05-28: Phase 0 Repository Baseline
 
 Status: Accepted

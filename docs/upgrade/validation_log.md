@@ -29,6 +29,53 @@ Artifacts:
 
 Notes:
 
+## 2026-06-08: Google Test Migration Plan Update
+
+Date: 2026-06-08
+
+Branch: `codex/gtest-migration-plan`
+
+Commit: Pending at validation log update
+
+Workstream: Phase 7 test framework planning
+
+Environment:
+- OS: macOS, local Codex workspace
+- Compiler: Not used
+- GSL: Not used
+- CMake: Not used
+- Make: Not used
+- MPI: Not used
+
+Commands:
+```sh
+git fetch personal --prune
+gh pr list --repo yingyue2030699/NERDSS_upgrade --state open --limit 100 --json number,title,headRefName,baseRefName,url
+gh pr close 5 8 11 14 17 20 23 26 29 32 35 39 43 46
+rg -n "CTest|ctest|custom CTest|Google Test|gtest|Google C\\+\\+" docs/refactor_implementation_plan.md docs/upgrade/unit_tests.md docs/upgrade/decision_log.md
+git diff --check HEAD
+```
+
+Results:
+- Closed the CTest-era validation-integration aggregation PRs as superseded:
+  #5, #8, #11, #14, #17, #20, #23, #26, #29, #32, #35, #39, #43, and #46.
+- Left focused implementation PRs open for later retargeting or Google
+  Test-style assertion conversion.
+- Updated Phase 7 planning docs to freeze custom CTest/std-library unit and
+  integration test work and adopt Google Test.
+
+Artifacts:
+- `docs/refactor_implementation_plan.md`
+- `docs/upgrade/unit_tests.md`
+- `docs/upgrade/decision_log.md`
+- This log entry.
+
+Notes:
+- This is a documentation and coordination update only. No test harness,
+  executable behavior, parser behavior, or probability kernel code changed.
+- Future validation commands should avoid relying on the superseded custom CTest
+  unit executable until the Google Test harness lands.
+
 ## 2026-05-28: Agent A Phase 0 Environment Baseline
 
 Date: 2026-05-28
