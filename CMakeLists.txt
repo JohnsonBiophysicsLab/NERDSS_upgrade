@@ -122,4 +122,15 @@ if(NERDSS_ENABLE_GTEST)
     target_link_libraries(nerdss_gtest_association_angle_helpers
         ${NERDSS_GTEST_MAIN_TARGET}
     )
+
+    add_executable(nerdss_gtest_parser_helpers
+        tests/gtest/parser_helpers_test.cpp
+        src/parser/parse_input_array.cpp
+        src/parser/read_boolean.cpp
+        src/parser/remove_comment.cpp
+    )
+    target_include_directories(nerdss_gtest_parser_helpers PRIVATE include)
+    target_link_libraries(nerdss_gtest_parser_helpers
+        ${NERDSS_GTEST_MAIN_TARGET}
+    )
 endif()

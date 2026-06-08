@@ -55,6 +55,12 @@ jobs:
     - name: Run Google Test association angle helpers target
       run: ./build-gtest/nerdss_gtest_association_angle_helpers
 
+    - name: Build Google Test parser helpers target
+      run: cmake --build build-gtest --target nerdss_gtest_parser_helpers
+
+    - name: Run Google Test parser helpers target
+      run: ./build-gtest/nerdss_gtest_parser_helpers
+
     - name: Clean before MPI build
       run: make clean
 

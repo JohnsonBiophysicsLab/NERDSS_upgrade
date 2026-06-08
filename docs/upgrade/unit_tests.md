@@ -37,6 +37,8 @@ cmake --build build-gtest --target nerdss_gtest_math_functions
 ./build-gtest/nerdss_gtest_math_functions
 cmake --build build-gtest --target nerdss_gtest_association_angle_helpers
 ./build-gtest/nerdss_gtest_association_angle_helpers
+cmake --build build-gtest --target nerdss_gtest_parser_helpers
+./build-gtest/nerdss_gtest_parser_helpers
 ```
 
 `NERDSS_ENABLE_GTEST=ON` requires a discoverable Google Test package. On Ubuntu
@@ -65,6 +67,10 @@ factorial behavior.
 The `nerdss_gtest_association_angle_helpers` target preserves deterministic
 association geometry predicates used by theta/phi/omega rotation paths,
 including current tolerance and exact-parallel sentinel behavior.
+
+The `nerdss_gtest_parser_helpers` target covers small deterministic parser
+normalization helpers, including comment removal, boolean parsing, and parameter
+array token parsing.
 
 ## Superseded CTest Work
 
