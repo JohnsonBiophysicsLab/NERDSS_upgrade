@@ -43,6 +43,12 @@ jobs:
     - name: Run Google Test rotation math target
       run: ./build-gtest/nerdss_gtest_rotation_math
 
+    - name: Build Google Test math functions target
+      run: cmake --build build-gtest --target nerdss_gtest_math_functions
+
+    - name: Run Google Test math functions target
+      run: ./build-gtest/nerdss_gtest_math_functions
+
     - name: Clean before MPI build
       run: make clean
 

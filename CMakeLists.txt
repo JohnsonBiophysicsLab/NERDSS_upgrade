@@ -97,4 +97,13 @@ if(NERDSS_ENABLE_GTEST)
     target_link_libraries(nerdss_gtest_rotation_math
         ${NERDSS_GTEST_MAIN_TARGET}
     )
+
+    add_executable(nerdss_gtest_math_functions
+        tests/gtest/math_functions_test.cpp
+        src/math/math_functions.cpp
+    )
+    target_include_directories(nerdss_gtest_math_functions PRIVATE include)
+    target_link_libraries(nerdss_gtest_math_functions
+        ${NERDSS_GTEST_MAIN_TARGET}
+    )
 endif()

@@ -33,6 +33,8 @@ cmake --build build-gtest --target nerdss_gtest_vector_coord
 ./build-gtest/nerdss_gtest_vector_coord
 cmake --build build-gtest --target nerdss_gtest_rotation_math
 ./build-gtest/nerdss_gtest_rotation_math
+cmake --build build-gtest --target nerdss_gtest_math_functions
+./build-gtest/nerdss_gtest_math_functions
 ```
 
 `NERDSS_ENABLE_GTEST=ON` requires a discoverable Google Test package. On Ubuntu
@@ -53,6 +55,10 @@ The next low-risk deterministic math target is `nerdss_gtest_rotation_math`,
 which pins quaternion algebra, quaternion vector rotation, and legacy Euler
 matrix rotation behavior before those kernels are moved behind MathEngine-style
 interfaces.
+
+The `nerdss_gtest_math_functions` target covers small deterministic numerical
+helpers in `MathFuncs`, including factorial, gamma-log, and cached gamma
+factorial behavior.
 
 ## Superseded CTest Work
 
