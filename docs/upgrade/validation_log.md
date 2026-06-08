@@ -29,6 +29,60 @@ Artifacts:
 
 Notes:
 
+## 2026-06-08: First Coord/Vector Google Test Conversion
+
+Date: 2026-06-08
+
+Branch: `codex/gtest-vector-coord-tests`
+
+Commit: Pending at validation log update
+
+Workstream: Phase 7 Google Test migration
+
+Environment:
+- OS: macOS, local Codex workspace
+- Compiler: Apple clang via default CMake compiler
+- GSL: 2.8 from Homebrew
+- CMake: Available on PATH
+- Make: GNU Make
+- MPI: Local `mpicxx` wrapper remains blocked by missing
+  `x86_64-apple-darwin13.4.0-clang++`
+
+Commands:
+```sh
+git diff --check HEAD
+tools/format_changed_files.sh --check --base HEAD
+cmake -S . -B /tmp/nerdss-gtest-default
+cmake --build /tmp/nerdss-gtest-default --target nerdss --parallel 4
+cmake -S . -B /tmp/nerdss-gtest-on -DNERDSS_ENABLE_GTEST=ON
+make serial -j4
+python3 tools/run_smoke_tests.py --skip-build --executable ./bin/nerdss --artifact-dir /tmp/nerdss-gtest-vector-coord-smoke
+```
+
+Results:
+- Passed: `git diff --check HEAD`.
+- Passed: `tools/format_changed_files.sh --check --base HEAD`; the helper
+  reported no tracked C/C++ files to format before staging this new test file.
+- Passed: default CMake configure in `/tmp/nerdss-gtest-default`.
+- Passed: default CMake build target `nerdss`.
+- Failed as expected locally: `NERDSS_ENABLE_GTEST=ON` configure could not find
+  `GTEST_LIBRARY`, `GTEST_INCLUDE_DIR`, or `GTEST_MAIN_LIBRARY`.
+- Passed: `make serial -j4`.
+- Passed: serial smoke runner with artifacts in
+  `/tmp/nerdss-gtest-vector-coord-smoke`.
+
+Artifacts:
+- `CMakeLists.txt`
+- `.github/workflows/c-cpp.yml`
+- `tests/gtest/vector_coord_test.cpp`
+- `docs/upgrade/unit_tests.md`
+- This log entry.
+
+Notes:
+- This slice converts only the prior low-risk Coord/Vector helper assertions.
+- The Google Test target is not expected to build locally unless Google Test is
+  installed or exposed through `CMAKE_PREFIX_PATH`.
+
 ## 2026-06-08: Minimal Google Test Harness
 
 Date: 2026-06-08

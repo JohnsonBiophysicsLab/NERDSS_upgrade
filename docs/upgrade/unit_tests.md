@@ -29,6 +29,8 @@ Google Test:
 cmake -S . -B build-gtest -DNERDSS_ENABLE_GTEST=ON
 cmake --build build-gtest --target nerdss_gtest_smoke
 ./build-gtest/nerdss_gtest_smoke
+cmake --build build-gtest --target nerdss_gtest_vector_coord
+./build-gtest/nerdss_gtest_vector_coord
 ```
 
 `NERDSS_ENABLE_GTEST=ON` requires a discoverable Google Test package. On Ubuntu
@@ -40,6 +42,10 @@ CMake harness uses that target instead.
 Run the Google Test binary directly. Do not add `ctest` as the default runner
 for this migration; a CTest wrapper can be reconsidered later if it adds value
 without reintroducing the custom test executable.
+
+The first converted low-risk test target is `nerdss_gtest_vector_coord`, which
+ports the old Coord/Vector helper assertions to Google Test without adding new
+scientific or fixture-heavy coverage.
 
 ## Superseded CTest Work
 

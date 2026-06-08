@@ -75,4 +75,14 @@ if(NERDSS_ENABLE_GTEST)
     target_link_libraries(nerdss_gtest_smoke
         ${NERDSS_GTEST_MAIN_TARGET}
     )
+
+    add_executable(nerdss_gtest_vector_coord
+        tests/gtest/vector_coord_test.cpp
+        src/classes/class_Coord.cpp
+        src/classes/class_Vector.cpp
+    )
+    target_include_directories(nerdss_gtest_vector_coord PRIVATE include)
+    target_link_libraries(nerdss_gtest_vector_coord
+        ${NERDSS_GTEST_MAIN_TARGET}
+    )
 endif()

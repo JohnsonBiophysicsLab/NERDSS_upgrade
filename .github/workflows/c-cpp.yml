@@ -31,6 +31,12 @@ jobs:
     - name: Run Google Test smoke target
       run: ./build-gtest/nerdss_gtest_smoke
 
+    - name: Build Google Test vector/coord target
+      run: cmake --build build-gtest --target nerdss_gtest_vector_coord
+
+    - name: Run Google Test vector/coord target
+      run: ./build-gtest/nerdss_gtest_vector_coord
+
     - name: Clean before MPI build
       run: make clean
 
