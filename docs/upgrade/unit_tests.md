@@ -20,12 +20,33 @@ Google Test cases.
 4. Convert useful CTest-era assertions to Google Test style in focused PRs.
 5. Update CI and coverage collection to call the Google Test targets.
 
+## Initial Harness
+
+The initial CMake hook is opt-in so normal serial and MPI builds do not require
+Google Test:
+
+```bash
+cmake -S . -B build-gtest -DNERDSS_ENABLE_GTEST=ON
+cmake --build build-gtest --target nerdss_gtest_smoke
+./build-gtest/nerdss_gtest_smoke
+```
+
+`NERDSS_ENABLE_GTEST=ON` requires a discoverable Google Test package. On Ubuntu
+CI this is provided by `libgtest-dev`. Local macOS builds can use a package
+manager installation or a CMake prefix that provides `GTest::gtest_main`.
+If the installed package exposes the older `GTest::Main` imported target, the
+CMake harness uses that target instead.
+
+Run the Google Test binary directly. Do not add `ctest` as the default runner
+for this migration; a CTest wrapper can be reconsidered later if it adds value
+without reintroducing the custom test executable.
+
 ## Superseded CTest Work
 
-The custom CTest harness, validation-integration stack PRs, and CTest-oriented
-unit/integration commands are superseded by this plan. The branches are kept so
-implementation work and useful assertions can be cherry-picked into Google Test
-PRs later.
+The custom CTest harness, validation-integration stack PRs, `BUILD_TESTING`
+unit target, and CTest-oriented unit/integration commands are superseded by this
+plan. The branches are kept so implementation work and useful assertions can be
+cherry-picked into Google Test PRs later.
 
 Generated build directories such as `build-unit-tests/` should not be
 committed.

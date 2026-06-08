@@ -13,14 +13,23 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install dependencies (GSL and MPI)
-      run: sudo apt-get update && sudo apt-get install -y openmpi-bin libopenmpi-dev libgsl-dev
+    - name: Install dependencies (GSL, MPI, and Google Test)
+      run: sudo apt-get update && sudo apt-get install -y cmake openmpi-bin libopenmpi-dev libgsl-dev libgtest-dev
 
     - name: Clean before serial build
       run: make clean
 
     - name: make serial
       run: make serial
+
+    - name: Configure Google Test smoke target
+      run: cmake -S . -B build-gtest -DNERDSS_ENABLE_GTEST=ON
+
+    - name: Build Google Test smoke target
+      run: cmake --build build-gtest --target nerdss_gtest_smoke
+
+    - name: Run Google Test smoke target
+      run: ./build-gtest/nerdss_gtest_smoke
 
     - name: Clean before MPI build
       run: make clean

@@ -29,7 +29,7 @@ message(STATUS "The host processor is ${CMAKE_HOST_SYSTEM_PROCESSOR} with ${NUM_
 
 include_directories(include)
 
-include(CTest)
+option(NERDSS_ENABLE_GTEST "Build Google Test based test targets" OFF)
 
 #add_definitions(-D_DEBUG) # comment this line if no need _DEBUG
 
@@ -59,12 +59,20 @@ target_link_libraries(nerdss GSL::gsl GSL::gslcblas)
 # Set up header directories
 include_directories(include $(GSL_INCLUDE_DIR))
 
-if(BUILD_TESTING)
-    add_executable(nerdss_unit_tests
-        tests/unit/test_vector_coord.cpp
-        src/classes/class_Coord.cpp
-        src/classes/class_Vector.cpp
+if(NERDSS_ENABLE_GTEST)
+    find_package(GTest REQUIRED)
+    if(TARGET GTest::gtest_main)
+        set(NERDSS_GTEST_MAIN_TARGET GTest::gtest_main)
+    elseif(TARGET GTest::Main)
+        set(NERDSS_GTEST_MAIN_TARGET GTest::Main)
+    else()
+        message(FATAL_ERROR "Google Test was found, but no gtest main target is available.")
+    endif()
+
+    add_executable(nerdss_gtest_smoke
+        tests/gtest/smoke_test.cpp
     )
-    target_include_directories(nerdss_unit_tests PRIVATE include)
-    add_test(NAME nerdss_unit_tests COMMAND nerdss_unit_tests)
+    target_link_libraries(nerdss_gtest_smoke
+        ${NERDSS_GTEST_MAIN_TARGET}
+    )
 endif()

@@ -437,12 +437,15 @@ Deliverables:
 - `tests/unit/` structure.
 - `tests/integration/` structure for slower pipeline and validation examples.
 - Google Test CMake target(s) and local commands.
+- Direct Google Test binary execution as the first supported runner; a CTest
+  wrapper can be considered later only as an optional runner layer.
 - GitHub Actions job that runs Google Test targets and reports failures.
 - Migration notes identifying CTest-era branches/PRs that are superseded or need
   assertion conversion.
 
 Acceptance criteria:
 - Google Test unit tests run locally and in CI.
+- Fast test jobs run Google Test binaries directly and do not require CTest.
 - Integration tests are separated from fast unit tests and can be selected by
   label, target, or workflow job.
 - No new custom CTest/std-library tests are added while the migration is active.
@@ -471,6 +474,8 @@ Deliverables:
 Acceptance criteria:
 - PRs cannot merge when format, build, unit, or smoke tests fail.
 - CI does not depend on the superseded custom CTest unit executable.
+- CI runs Google Test binaries directly unless a future decision accepts a CTest
+  runner wrapper.
 - Regression failures report which files differ and how.
 
 Dependencies:

@@ -29,6 +29,64 @@ Artifacts:
 
 Notes:
 
+## 2026-06-08: Minimal Google Test Harness
+
+Date: 2026-06-08
+
+Branch: `codex/gtest-minimal-harness`
+
+Commit: Pending at validation log update
+
+Workstream: Phase 7 Google Test migration
+
+Environment:
+- OS: macOS, local Codex workspace
+- Compiler: Apple clang via default CMake compiler
+- GSL: 2.8 from Homebrew
+- CMake: Available on PATH
+- Make: GNU Make
+- MPI: Local `mpicxx` wrapper remains blocked by missing
+  `x86_64-apple-darwin13.4.0-clang++`
+
+Commands:
+```sh
+cmake --find-package -DNAME=GTest -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST
+cmake -S . -B /tmp/nerdss-gtest-on -DNERDSS_ENABLE_GTEST=ON
+cmake -S . -B /tmp/nerdss-gtest-default
+cmake --build /tmp/nerdss-gtest-default --target nerdss --parallel 4
+tools/format_changed_files.sh --check --base HEAD
+make serial -j4
+python3 tools/run_smoke_tests.py --skip-build --executable ./bin/nerdss --artifact-dir /tmp/nerdss-gtest-harness-smoke
+git diff --check HEAD
+```
+
+Results:
+- Local Google Test discovery reports `GTest not found`, so the new target was
+  not built locally.
+- `cmake -S . -B /tmp/nerdss-gtest-on -DNERDSS_ENABLE_GTEST=ON` fails locally
+  at `find_package(GTest REQUIRED)` because Google Test is not installed.
+- Default CMake configure/build and `make serial -j4` passed without Google
+  Test because `NERDSS_ENABLE_GTEST` defaults to `OFF`.
+- `tools/format_changed_files.sh --check --base HEAD` passed; no tracked C/C++
+  files required formatting at that point.
+- The direct smoke runner passed with `./bin/nerdss` and wrote artifacts under
+  `/tmp/nerdss-gtest-harness-smoke`.
+- `git diff --check HEAD` passed.
+- GitHub Actions now installs `libgtest-dev`, configures
+  `NERDSS_ENABLE_GTEST=ON`, builds `nerdss_gtest_smoke`, and runs the smoke
+  binary.
+
+Artifacts:
+- `CMakeLists.txt`
+- `.github/workflows/c-cpp.yml`
+- `tests/gtest/smoke_test.cpp`
+- `docs/upgrade/unit_tests.md`
+- This log entry.
+
+Notes:
+- This slice intentionally adds only a harness smoke test. It does not convert
+  existing CTest-era domain assertions.
+
 ## 2026-06-08: Google Test Migration Plan Update
 
 Date: 2026-06-08

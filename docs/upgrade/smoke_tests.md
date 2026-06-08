@@ -24,6 +24,9 @@ By default, the runner:
 The smoke input is intentionally minimal and is not a scientific regression
 baseline. It only verifies that the serial executable can build, parse an input,
 initialize one molecule, run a few iterations, and emit normal output files.
+The smoke runner remains valid during the Google Test migration because it
+exercises the serial executable directly and does not depend on the superseded
+custom CTest unit target.
 
 ## Useful Options
 
