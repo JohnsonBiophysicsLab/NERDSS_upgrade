@@ -106,4 +106,20 @@ if(NERDSS_ENABLE_GTEST)
     target_link_libraries(nerdss_gtest_math_functions
         ${NERDSS_GTEST_MAIN_TARGET}
     )
+
+    add_executable(nerdss_gtest_association_angle_helpers
+        tests/gtest/association_angle_helpers_test.cpp
+        src/classes/class_Coord.cpp
+        src/classes/class_Quat.cpp
+        src/classes/class_Vector.cpp
+        src/reactions/angleSignIsCorrect.cpp
+        src/reactions/areParallel.cpp
+        src/reactions/areSameAngle.cpp
+        src/reactions/create_arbitrary_vector.cpp
+        src/reactions/requiresSignFlip.cpp
+    )
+    target_include_directories(nerdss_gtest_association_angle_helpers PRIVATE include)
+    target_link_libraries(nerdss_gtest_association_angle_helpers
+        ${NERDSS_GTEST_MAIN_TARGET}
+    )
 endif()

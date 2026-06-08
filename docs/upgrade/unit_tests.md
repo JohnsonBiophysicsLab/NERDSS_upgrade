@@ -35,6 +35,8 @@ cmake --build build-gtest --target nerdss_gtest_rotation_math
 ./build-gtest/nerdss_gtest_rotation_math
 cmake --build build-gtest --target nerdss_gtest_math_functions
 ./build-gtest/nerdss_gtest_math_functions
+cmake --build build-gtest --target nerdss_gtest_association_angle_helpers
+./build-gtest/nerdss_gtest_association_angle_helpers
 ```
 
 `NERDSS_ENABLE_GTEST=ON` requires a discoverable Google Test package. On Ubuntu
@@ -59,6 +61,10 @@ interfaces.
 The `nerdss_gtest_math_functions` target covers small deterministic numerical
 helpers in `MathFuncs`, including factorial, gamma-log, and cached gamma
 factorial behavior.
+
+The `nerdss_gtest_association_angle_helpers` target preserves deterministic
+association geometry predicates used by theta/phi/omega rotation paths,
+including current tolerance and exact-parallel sentinel behavior.
 
 ## Superseded CTest Work
 

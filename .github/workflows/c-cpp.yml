@@ -49,6 +49,12 @@ jobs:
     - name: Run Google Test math functions target
       run: ./build-gtest/nerdss_gtest_math_functions
 
+    - name: Build Google Test association angle helpers target
+      run: cmake --build build-gtest --target nerdss_gtest_association_angle_helpers
+
+    - name: Run Google Test association angle helpers target
+      run: ./build-gtest/nerdss_gtest_association_angle_helpers
+
     - name: Clean before MPI build
       run: make clean
 
