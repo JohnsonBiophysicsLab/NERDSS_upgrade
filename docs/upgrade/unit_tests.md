@@ -70,7 +70,8 @@ including current tolerance and exact-parallel sentinel behavior.
 
 The `nerdss_gtest_parser_helpers` target covers small deterministic parser
 normalization helpers, including comment removal, boolean parsing, and parameter
-array token parsing.
+array token parsing. It also checks the lightweight parser diagnostics formatter
+used by parser-helper fatal paths.
 
 ## Superseded CTest Work
 

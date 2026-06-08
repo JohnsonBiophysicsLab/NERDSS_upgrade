@@ -130,12 +130,14 @@ unique_files=()
 if ((${#files[@]} > 0)); then
   for path in "${files[@]}"; do
     seen=0
-    for existing in "${unique_files[@]}"; do
-      if [[ "$existing" == "$path" ]]; then
-        seen=1
-        break
-      fi
-    done
+    if ((${#unique_files[@]} > 0)); then
+      for existing in "${unique_files[@]}"; do
+        if [[ "$existing" == "$path" ]]; then
+          seen=1
+          break
+        fi
+      done
+    fi
     if ((seen == 0)); then
       unique_files+=("$path")
     fi

@@ -126,6 +126,7 @@ if(NERDSS_ENABLE_GTEST)
     add_executable(nerdss_gtest_parser_helpers
         tests/gtest/parser_helpers_test.cpp
         src/parser/parse_input_array.cpp
+        src/parser/parser_diagnostics.cpp
         src/parser/read_boolean.cpp
         src/parser/remove_comment.cpp
     )

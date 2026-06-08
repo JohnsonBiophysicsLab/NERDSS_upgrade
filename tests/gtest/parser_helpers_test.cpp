@@ -1,4 +1,5 @@
 #include "parser/parser_functions.hpp"
+#include "parser/parser_diagnostics.hpp"
 
 #include <cmath>
 #include <string>
@@ -51,6 +52,17 @@ TEST(ParserHelpersTest, ParsesPiAndNanTokens) {
   EXPECT_NEAR(values[0], std::acos(-1.0), kTolerance);
   EXPECT_NEAR(values[1], std::acos(-1.0), kTolerance);
   EXPECT_TRUE(std::isnan(values[2]));
+}
+
+TEST(ParserHelpersTest, FormatsParserDiagnosticsWithContext) {
+  std::string message = nerdss::parser::format_parser_error(
+      "read_boolean", "expected boolean token", "maybe");
+
+  EXPECT_NE(message.find("PARSER_ERROR[read_boolean]"), std::string::npos);
+  EXPECT_NE(message.find("expected boolean token"), std::string::npos);
+  EXPECT_NE(message.find("input: maybe"), std::string::npos);
+  EXPECT_NE(message.find("category: input"), std::string::npos);
+  EXPECT_NE(message.find("exit_code: 2"), std::string::npos);
 }
 
 }  // namespace

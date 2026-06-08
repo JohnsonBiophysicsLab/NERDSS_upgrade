@@ -29,6 +29,74 @@ Artifacts:
 
 Notes:
 
+## 2026-06-08: Parser Helper Diagnostics
+
+Date: 2026-06-08
+
+Branch: `codex/parser-helper-diagnostics`
+
+Commit: Pending at validation log update
+
+Workstream: Parser diagnostics migration
+
+Environment:
+- OS: macOS, local Codex workspace
+- Compiler: Apple clang via default CMake compiler
+- GSL: 2.8 from Homebrew
+- CMake: Available on PATH
+- Make: GNU Make
+- MPI: Local `mpicxx` wrapper remains blocked by missing
+  `x86_64-apple-darwin13.4.0-clang++`
+
+Commands:
+```sh
+git diff --check HEAD
+tools/format_changed_files.sh --check --base HEAD
+cmake -S . -B /tmp/nerdss-parser-helper-diagnostics-default
+cmake --build /tmp/nerdss-parser-helper-diagnostics-default --target nerdss --parallel 4
+cmake -S . -B /tmp/nerdss-parser-helper-diagnostics-gtest -DNERDSS_ENABLE_GTEST=ON
+make serial -j4
+python3 tools/run_smoke_tests.py --skip-build --executable ./bin/nerdss --artifact-dir /tmp/nerdss-parser-helper-diagnostics-smoke
+```
+
+Results:
+- Passed: `git diff --check HEAD`.
+- Fixed and passed: `tools/format_changed_files.sh --check --base HEAD`. The
+  helper initially failed on an empty `unique_files` array under `set -u`, then
+  successfully checked the changed parser diagnostics files after the guard fix
+  and clang-format normalization.
+- Passed: default CMake configure in
+  `/tmp/nerdss-parser-helper-diagnostics-default`.
+- Passed: default CMake build target `nerdss`.
+- Failed as expected locally: `NERDSS_ENABLE_GTEST=ON` configure could not find
+  `GTEST_LIBRARY`, `GTEST_INCLUDE_DIR`, or `GTEST_MAIN_LIBRARY`.
+- Passed: direct `/tmp/nerdss_parser_diagnostics_probe` compile/run for valid
+  parser-helper behavior and diagnostic formatting.
+- Passed: direct `/tmp/nerdss_parser_diagnostics_failure_probe` compile/run;
+  invalid `read_boolean` input printed structured parser diagnostics and exited
+  with code 2.
+- Passed: `make serial -j4`.
+- Passed: serial smoke runner with artifacts in
+  `/tmp/nerdss-parser-helper-diagnostics-smoke`.
+
+Artifacts:
+- `include/parser/parser_diagnostics.hpp`
+- `src/parser/parser_diagnostics.cpp`
+- `src/parser/read_boolean.cpp`
+- `src/parser/parse_input_array.cpp`
+- `tests/gtest/parser_helpers_test.cpp`
+- `CMakeLists.txt`
+- `docs/upgrade/unit_tests.md`
+- `tools/format_changed_files.sh`
+- This log entry.
+
+Notes:
+- This slice adds a lightweight parser diagnostic formatter/fatal helper and
+  applies it to invalid `read_boolean` and `parse_input_array` parser-helper
+  paths.
+- Valid parser-helper behavior remains covered by `nerdss_gtest_parser_helpers`.
+- File-open parser diagnostics remain queued as the next focused slice.
+
 ## 2026-06-08: Parser Helpers Google Test Conversion
 
 Date: 2026-06-08
