@@ -1,4 +1,19 @@
+#include "parser/parser_diagnostics.hpp"
 #include "parser/parser_functions.hpp"
+
+namespace {
+
+[[noreturn]] void fail_invalid_bngl_character(
+    const std::string& parser_name, char invalid_character,
+    const std::string& input, const std::string& context) {
+  std::string detail{"invalid character '"};
+  detail += invalid_character;
+  detail += "' in ";
+  detail += context;
+  nerdss::parser::fail_parser_error(parser_name, detail, input);
+}
+
+}  // namespace
 
 ParsedMol parse_molecule_bngl(int& totSpecies, bool isProductSide,
     std::pair<std::string, int> oneMol) // totSpecies is not altered in this routine
@@ -63,10 +78,9 @@ ParsedMol parse_molecule_bngl(int& totSpecies, bool isProductSide,
                      * -unless it has a state then, add to possiblyInvolvedIfaceList, since the state could change
                      */
                     if (!isWildcard) {
-                        // TODO: Write this
-                        std::cerr
-                            << "Error, no indexed interactions are allowed in the reactants. Converting to wildcard.\n";
-                        exit(1);
+                        nerdss::parser::fail_parser_error(
+                            "parse_molecule_bngl",
+                            "indexed interactions are not allowed in reactants", oneMol.first);
                     }
 
                     // if a state existed, create an Iface with that state required
@@ -118,9 +132,9 @@ ParsedMol parse_molecule_bngl(int& totSpecies, bool isProductSide,
                 break;
             }
             default: {
-                //                gen_read_err(__func__, __LINE__);
-                std::cerr << "ERROR: Character " << *molIterator << " is not valid in reactions. Exiting...\n.";
-                exit(1);
+                fail_invalid_bngl_character(
+                    "parse_molecule_bngl", *molIterator, oneMol.first,
+                    "reaction molecule expression");
             }
             }
         }
@@ -170,8 +184,9 @@ ParsedMolNumState parse_number_bngl(std::string oneLine)
                 break;
             }
             default: {
-                std::cerr << "ERROR: Character " << *molIterator << " is not valid in starting copy numbers for each state. Exiting...\n.";
-                exit(1);
+                fail_invalid_bngl_character(
+                    "parse_number_bngl", *molIterator, oneLine,
+                    "starting copy-number state expression");
             }
             }
         }
