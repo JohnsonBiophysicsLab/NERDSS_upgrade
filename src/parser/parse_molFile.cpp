@@ -38,8 +38,8 @@ MolTemplate parse_molFile(std::string& mol)
         line.erase(
             std::remove_if(line.begin(), line.end(), [](unsigned char x) { return std::isspace(x); }), line.end());
 
-        // skip if entire line is a comment, or remove the trailing comment
-        if (line[0] == '#') {
+        // skip if entire line is blank or a comment, or remove the trailing comment
+        if (line.empty() || line[0] == '#') {
             initialPos = molFile.tellg();
             continue;
         } else

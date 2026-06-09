@@ -29,6 +29,61 @@ Artifacts:
 
 Notes:
 
+## 2026-06-09: Molecule File Blank-Line Handling
+
+Date: 2026-06-09
+
+Branch: `codex/parser-molfile-empty-lines`
+
+Commit: Pending at validation log update
+
+Workstream: Parser diagnostics migration
+
+Environment:
+- OS: macOS, local Codex workspace
+- Compiler: Apple clang via default CMake compiler
+- GSL: 2.8 from Homebrew
+- CMake: Available on PATH
+- Make: GNU Make
+- MPI: Local `mpicxx` wrapper remains blocked by missing
+  `x86_64-apple-darwin13.4.0-clang++`
+
+Commands:
+```sh
+git diff --check HEAD
+tools/format_changed_files.sh --check --base HEAD
+cmake -S . -B /tmp/nerdss-parser-molfile-empty-default
+cmake --build /tmp/nerdss-parser-molfile-empty-default --target nerdss --parallel 4
+cmake -S . -B /tmp/nerdss-parser-molfile-empty-gtest -DNERDSS_ENABLE_GTEST=ON
+make serial -j4
+python3 tools/run_smoke_tests.py --skip-build --executable ./bin/nerdss --artifact-dir /tmp/nerdss-parser-molfile-empty-smoke
+```
+
+Results:
+- `git diff --check HEAD`: passed.
+- `tools/format_changed_files.sh --check --base HEAD`: failed because the
+  touched legacy file `src/parser/parse_molFile.cpp` has broad pre-existing
+  clang-format drift; this slice did not reformat the whole file to keep the
+  review focused.
+- Default CMake configure: passed.
+- Default CMake `nerdss` target build: passed.
+- `cmake -S . -B /tmp/nerdss-parser-molfile-empty-gtest
+  -DNERDSS_ENABLE_GTEST=ON`: failed as expected in this local workspace because
+  Google Test is not installed/discoverable (`GTEST_LIBRARY`,
+  `GTEST_INCLUDE_DIR`, and `GTEST_MAIN_LIBRARY` missing).
+- `make serial -j4`: passed.
+- Smoke runner with `--skip-build`: passed.
+
+Artifacts:
+- `src/parser/parse_molFile.cpp`
+- This log entry.
+
+Notes:
+- This slice changes whitespace-only molecule-file lines from undefined
+  `line[0]` access to the same skip path used for full-line comments.
+- Broader molecule parser syntax diagnostics remain queued for a separate
+  focused slice.
+
 ## 2026-06-09: Parser File-Open Diagnostics
 
 Date: 2026-06-09
