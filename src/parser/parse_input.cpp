@@ -1,5 +1,6 @@
 #include "classes/class_Membrane.hpp"
 #include "error/error.hpp"
+#include "parser/parser_diagnostics.hpp"
 #include "io/io.hpp"
 #include "parser/parser_functions.hpp"
 #include "system_setup/system_setup.hpp"
@@ -208,8 +209,8 @@ void parse_input(std::string& fileName, Parameters& params, std::map<std::string
                         }
                     }
                     if (gotValue == false) {
-                        std::cout << "Please provide the copy number of each molecule in INP file in this format-- molName:100" << std::endl;
-                        exit(0);
+                        nerdss::parser::fail_parser_error(
+                            "parse_input", "expected molecule copy number in format molName:100", line);
                     }
                 }
             }
@@ -498,8 +499,8 @@ void parse_input_for_add(std::string& fileName, Parameters& params, std::map<std
                         }
                     }
                     if (gotValue == false) {
-                        std::cout << "Please provide the copy number of each molecule in INP file in this format-- molName:100" << std::endl;
-                        exit(0);
+                        nerdss::parser::fail_parser_error(
+                            "parse_input_for_add", "expected molecule copy number in format molName:100", line);
                     }
                 }
             }

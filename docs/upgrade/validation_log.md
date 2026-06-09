@@ -29,6 +29,66 @@ Artifacts:
 
 Notes:
 
+## 2026-06-09: Input Copy-Count Diagnostics
+
+Date: 2026-06-09
+
+Branch: `codex/parser-input-copy-count-diagnostics`
+
+Commit: Pending at validation log update
+
+Workstream: Parser diagnostics migration
+
+Environment:
+- OS: macOS, local Codex workspace
+- Compiler: Apple clang via default CMake compiler
+- GSL: 2.8 from Homebrew
+- CMake: Available on PATH
+- Make: GNU Make
+- MPI: Local `mpicxx` wrapper remains blocked by missing
+  `x86_64-apple-darwin13.4.0-clang++`
+
+Commands:
+```sh
+git diff --check HEAD
+tools/format_changed_files.sh --check --base HEAD
+cmake -S . -B /tmp/nerdss-parser-input-copy-count-default
+cmake --build /tmp/nerdss-parser-input-copy-count-default --target nerdss --parallel 4
+cmake -S . -B /tmp/nerdss-parser-input-copy-count-gtest -DNERDSS_ENABLE_GTEST=ON
+make serial -j4
+python3 tools/run_smoke_tests.py --skip-build --executable ./bin/nerdss --artifact-dir /tmp/nerdss-parser-input-copy-count-smoke
+/Users/yueying/Documents/NERDSS\ upgrade/NERDSS_upgrade/bin/nerdss -f smoke.inp -s 123
+```
+
+Results:
+- `git diff --check HEAD`: passed.
+- `tools/format_changed_files.sh --check --base HEAD`: failed because the
+  touched legacy file `src/parser/parse_input.cpp` has broad pre-existing
+  clang-format drift; this slice did not reformat the whole file to keep the
+  review focused.
+- Default CMake configure: passed.
+- Default CMake `nerdss` target build: passed.
+- `cmake -S . -B /tmp/nerdss-parser-input-copy-count-gtest
+  -DNERDSS_ENABLE_GTEST=ON`: failed as expected in this local workspace because
+  Google Test is not installed/discoverable (`GTEST_LIBRARY`,
+  `GTEST_INCLUDE_DIR`, and `GTEST_MAIN_LIBRARY` missing).
+- `make serial -j4`: passed.
+- Smoke runner with `--skip-build`: passed.
+- Negative malformed-input probe from
+  `/tmp/nerdss-parser-input-copy-count-negative`: passed, exiting with code `2`
+  and `PARSER_ERROR[parse_input]` for input `A1`.
+
+Artifacts:
+- `src/parser/parse_input.cpp`
+- This log entry.
+
+Notes:
+- This slice changes malformed molecule copy-count input from a printed
+  message plus successful `exit(0)` to the shared parser diagnostics error
+  path and input-error exit code.
+- No CTest/custom test implementation was added; Google Test migration remains
+  the selected path for future unit and integration tests.
+
 ## 2026-06-09: Molecule File Blank-Line Handling
 
 Date: 2026-06-09
