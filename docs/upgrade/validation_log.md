@@ -29,6 +29,66 @@ Artifacts:
 
 Notes:
 
+## 2026-06-09: Parser File-Open Diagnostics
+
+Date: 2026-06-09
+
+Branch: `codex/parser-file-open-diagnostics`
+
+Commit: Pending at validation log update
+
+Workstream: Parser diagnostics migration
+
+Environment:
+- OS: macOS, local Codex workspace
+- Compiler: Apple clang via default CMake compiler
+- GSL: 2.8 from Homebrew
+- CMake: Available on PATH
+- Make: GNU Make
+- MPI: Local `mpicxx` wrapper remains blocked by missing
+  `x86_64-apple-darwin13.4.0-clang++`
+
+Commands:
+```sh
+git diff --check HEAD
+tools/format_changed_files.sh --check --base HEAD
+cmake -S . -B /tmp/nerdss-parser-file-open-default
+cmake --build /tmp/nerdss-parser-file-open-default --target nerdss --parallel 4
+cmake -S . -B /tmp/nerdss-parser-file-open-gtest -DNERDSS_ENABLE_GTEST=ON
+make serial -j4
+python3 tools/run_smoke_tests.py --skip-build --executable ./bin/nerdss --artifact-dir /tmp/nerdss-parser-file-open-smoke
+```
+
+Results:
+- Passed: `git diff --check HEAD`.
+- Failed: `tools/format_changed_files.sh --check --base HEAD` because the
+  helper checks whole touched files and `parse_input.cpp` / `parse_molFile.cpp`
+  still have broad pre-existing clang-format drift. The files were not
+  auto-formatted in this focused diagnostics slice to avoid a large unrelated
+  parser formatting diff.
+- Passed: default CMake configure in `/tmp/nerdss-parser-file-open-default`.
+- Passed: default CMake build target `nerdss`.
+- Failed as expected locally: `NERDSS_ENABLE_GTEST=ON` configure could not find
+  `GTEST_LIBRARY`, `GTEST_INCLUDE_DIR`, or `GTEST_MAIN_LIBRARY`.
+- Passed: `make serial -j4`.
+- Passed: serial smoke runner with artifacts in
+  `/tmp/nerdss-parser-file-open-smoke`.
+- Passed: `./bin/nerdss -f /tmp/nerdss-missing-input-file-does-not-exist.inp`
+  exited nonzero and printed the new input filename diagnostic.
+
+Artifacts:
+- `src/parser/parse_input.cpp`
+- `src/parser/parse_molFile.cpp`
+- `src/parser/parse_input_for_a_restart_simulation.cpp`
+- This log entry.
+
+Notes:
+- This slice preserves fatal behavior while adding filename/context to parser
+  input, add-input, molecule-file, molecule-keyword, and restart-file open
+  diagnostics.
+- `parse_molecule_bngl.cpp` syntax diagnostics and empty-line `parse_molFile`
+  crash behavior remain queued for separate slices.
+
 ## 2026-06-08: Parser Helper Diagnostics
 
 Date: 2026-06-08

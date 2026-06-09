@@ -82,7 +82,8 @@ void parse_input_for_a_restart_simulation(
   }
 
   std::ifstream restartFileInput{restartFileNameInput};
-  if (!restartFileInput) error("could not find restart file, exiting...");
+  if (!restartFileInput)
+    error(mpiContext, "Cannot open restart file '" + restartFileNameInput + "'.");
 
   std::cout << "Reading restart file..." << std::endl;
   std::vector<TransmissionRxn> transmissionRxns{};

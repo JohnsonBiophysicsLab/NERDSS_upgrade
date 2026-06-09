@@ -1,3 +1,4 @@
+#include "error/error.hpp"
 #include "parser/parser_functions.hpp"
 
 MolTemplate parse_molFile(std::string& mol)
@@ -26,8 +27,7 @@ MolTemplate parse_molFile(std::string& mol)
     std::cout << mol + ".mol" << '\n';
     std::ifstream molFile { mol + ".mol" };
     if (!molFile) {
-        std::cout << "Cannot open molecule config file for molecule " << mol << '\n';
-        exit(1);
+        error("Cannot open molecule file '" + mol + ".mol' for molecule '" + mol + "'.");
     }
 
     MolTemplate tmpTemplate;
@@ -60,8 +60,7 @@ MolTemplate parse_molFile(std::string& mol)
             else if (*lineItr == '=') {
                 auto keyFind = molKeywords.find(buffer);
                 if (keyFind == molKeywords.end()) {
-                    std::cout << buffer + " is an invalid argument.";
-                    exit(1);
+                    error("Invalid molecule keyword '" + buffer + "' in molecule file '" + mol + ".mol'.");
                 }
 
                 line.erase(line.begin(), lineItr + 1); // + 1 removes the '=' sign. could make this erase(remove_if)
