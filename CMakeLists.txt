@@ -63,7 +63,10 @@ if(BUILD_TESTING)
     add_executable(nerdss_unit_tests
         tests/unit/test_vector_coord.cpp
         src/classes/class_Coord.cpp
+        src/classes/class_Parameters.cpp
         src/classes/class_Vector.cpp
+        src/parser/read_boolean.cpp
+        src/parser/remove_comment.cpp
     )
     target_include_directories(nerdss_unit_tests PRIVATE include)
     add_test(NAME nerdss_unit_tests COMMAND nerdss_unit_tests)

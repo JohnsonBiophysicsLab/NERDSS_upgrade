@@ -16,8 +16,43 @@
 #include "io/io.hpp"
 #include "parser/parser_functions.hpp"
 
+#include <cmath>
+#include <limits>
+#include <stdexcept>
+
 double Parameters::dt = 0.0;
 std::vector<long long int> Parameters::lastUpdateTransition {};
+
+namespace {
+
+long long int parse_integer_timestep_value(const std::string& value)
+{
+    std::size_t parsedLength { 0 };
+    double parsedValue { 0.0 };
+
+    try {
+        parsedValue = std::stod(value, &parsedLength);
+    } catch (const std::exception&) {
+        throw std::invalid_argument("Not a valid timestep value.");
+    }
+
+    if (parsedLength != value.size() || !std::isfinite(parsedValue)
+        || parsedValue < static_cast<double>(std::numeric_limits<long long int>::min())
+        || parsedValue > static_cast<double>(std::numeric_limits<long long int>::max())
+        || parsedValue != std::trunc(parsedValue)) {
+        throw std::invalid_argument("Not a valid timestep value.");
+    }
+
+    return static_cast<long long int>(parsedValue);
+}
+
+void set_timestep_value(long long int& target, const std::string& value, const char* label)
+{
+    target = parse_integer_timestep_value(value);
+    std::cout << "Read in " << label << ": " << target << " timeSteps" << std::endl;
+}
+
+} // namespace
 
 // this is so we can compare parsed keywords with the enumerations (we need them as strings)
 std::map<const std::string, ParamKeyword> parmKeywords = {
@@ -44,7 +79,6 @@ void Parameters::set_value(std::string value, ParamKeyword keywords)
      * @param value value of the parameter as a string
      * @param keywords the keyword parsed from the input file to match to the enumeration Keywords
      */
-    double temp, checkit, transitionit;
     try {
         auto key = static_cast<std::underlying_type<ParamKeyword>::type>(keywords);
         switch (key) {
@@ -57,20 +91,17 @@ void Parameters::set_value(std::string value, ParamKeyword keywords)
             std::cout << "Read in numTotalSpecies: " << this->numTotalSpecies << std::endl;
             break;
         case 2:
-            this->nItr = std::stoll(value);
-            std::cout << "Read in nItr: " << this->nItr << " timeSteps" << std::endl;
+            set_timestep_value(this->nItr, value, "nItr");
             break;
         case 3:
             this->fromRestart = read_boolean(value);
             std::cout << "Read in fromRestart: " << std::boolalpha << this->fromRestart << std::endl;
             break;
         case 4:
-            this->timeWrite = std::stoll(value);
-            std::cout << "Read in timeWrite: " << this->timeWrite << " timeSteps" << std::endl;
+            set_timestep_value(this->timeWrite, value, "timeWrite");
             break;
         case 5:
-            this->trajWrite = std::stoll(value);
-            std::cout << "Read in trajWrite: " << this->trajWrite << " timeSteps" << std::endl;
+            set_timestep_value(this->trajWrite, value, "trajWrite");
             break;
         case 6:
             this->timeStep = std::stod(value);
@@ -85,12 +116,10 @@ void Parameters::set_value(std::string value, ParamKeyword keywords)
             std::cout << "Read in mass: " << this->mass << std::endl;
             break;
         case 10:
-            this->restartWrite = std::stoll(value);
-            std::cout << "Read in restartWrite: " << this->restartWrite << " timeSteps" << std::endl;
+            set_timestep_value(this->restartWrite, value, "restartWrite");
             break;
         case 11:
-            this->pdbWrite = std::stoll(value);
-            std::cout << "Read in pdbWrite: " << this->pdbWrite << " timeSteps" << std::endl;
+            set_timestep_value(this->pdbWrite, value, "pdbWrite");
             break;
         case 12:
             this->overlapSepLimit = std::stod(value);
@@ -101,16 +130,14 @@ void Parameters::set_value(std::string value, ParamKeyword keywords)
             std::cout << "Read in name: " << value << std::endl;
             break;
         case 14:
-            this->checkPoint = std::stoll(value);
-            std::cout << "Read in checkPoint: " << this->checkPoint << " timeSteps" << std::endl;
+            set_timestep_value(this->checkPoint, value, "checkPoint");
             break;
         case 15:
             this->scaleMaxDisplace = std::stod(value);
             std::cout << "Read in scaleMaxDisplace: " << this->scaleMaxDisplace << std::endl;
             break;
         case 16:
-            this->transitionWrite = std::stoll(value);
-            std::cout << "Read in transitionWrite: " << this->transitionWrite << " timeSteps" << std::endl;
+            set_timestep_value(this->transitionWrite, value, "transitionWrite");
             break;
         case 17:
             this->clusterOverlapCheck = read_boolean(value);
@@ -125,8 +152,7 @@ void Parameters::set_value(std::string value, ParamKeyword keywords)
             std::cout << "Read in RNGwrite: " << std::boolalpha << this->rngwrite << std::endl;
             break;
         case 20:
-            this->bondedComplexWrite = std::stoll(value);
-            std::cout << "Read in bondedComplexWrite: " << this->bondedComplexWrite << " timeSteps" << std::endl;
+            set_timestep_value(this->bondedComplexWrite, value, "bondedComplexWrite");
             break;
         default:
             throw std::invalid_argument("Not a valid keyword.");

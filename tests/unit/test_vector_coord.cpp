@@ -1,4 +1,5 @@
 #include "classes/class_Coord.hpp"
+#include "classes/class_Parameters.hpp"
 #include "classes/class_Vector.hpp"
 
 #include <cmath>
@@ -22,6 +23,14 @@ void require_true(bool condition, const std::string& label)
 {
     if (!condition) {
         std::cerr << label << '\n';
+        std::exit(1);
+    }
+}
+
+void require_equal(long long int actual, long long int expected, const std::string& label)
+{
+    if (actual != expected) {
+        std::cerr << label << ": expected " << expected << ", got " << actual << '\n';
         std::exit(1);
     }
 }
@@ -78,6 +87,23 @@ void test_vector_cross_projection_and_angle()
     require_close(x_axis.dot_theta(y_axis), std::acos(0.0), "right angle between axes");
 }
 
+void test_parameter_timestep_scientific_notation()
+{
+    Parameters params;
+
+    params.set_value("1E5", ParamKeyword::nItr);
+    params.set_value("2.5e4", ParamKeyword::timeWrite);
+    params.set_value("3e3", ParamKeyword::restartWrite);
+    params.set_value("-1e0", ParamKeyword::pdbWrite);
+    params.set_value("4E2", ParamKeyword::bondedComplexWrite);
+
+    require_equal(params.nItr, 100000, "nItr scientific notation");
+    require_equal(params.timeWrite, 25000, "timeWrite scientific notation");
+    require_equal(params.restartWrite, 3000, "restartWrite scientific notation");
+    require_equal(params.pdbWrite, -1, "pdbWrite scientific notation");
+    require_equal(params.bondedComplexWrite, 400, "bondedComplexWrite scientific notation");
+}
+
 } // namespace
 
 int main()
@@ -85,5 +111,6 @@ int main()
     test_coord_rounding_and_colinearity();
     test_vector_magnitude_dot_and_normalize();
     test_vector_cross_projection_and_angle();
+    test_parameter_timestep_scientific_notation();
     return 0;
 }
