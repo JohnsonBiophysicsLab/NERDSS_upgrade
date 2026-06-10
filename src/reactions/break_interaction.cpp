@@ -46,9 +46,9 @@ bool break_interaction(long long int iter, size_t relIface1, size_t relIface2, M
     }
     // std::cout << "New Com Index: " << newComIndex << '\n';
 
-    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Disabled merge-era code below.
     // This is commented out when merging
-    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Disabled merge-era code below.
     /*assign each protein in original complex c1 to one of the two new
      complexes, if the complex forms a loop, they will be put back together in
      c1, and the individual interfaces that dissociated freed.
@@ -132,8 +132,8 @@ bool break_interaction(long long int iter, size_t relIface1, size_t relIface2, M
     // // if not, move them slightly apart
     // // if so, change complex identities back and don't move
     // bool keepSameComplex;
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // End disabled merge-era code.
+    // End disabled merge-era code.
     if (reactMol2.isImplicitLipid == false)
         keepSameComplex = determine_parent_complex_IL(reactMol1.index, reactMol2.index, newComIndex, moleculeList, complexList, ILindexMol);
     else
@@ -199,9 +199,9 @@ bool break_interaction(long long int iter, size_t relIface1, size_t relIface2, M
          if the complex forms a loop, they will be put back together in c1, and the
          individual interfaces that dissociated freed.
          */
-        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        // Disabled merge-era code below.
         // This is commented out when merging
-        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        // Disabled merge-era code below.
         // // complexList[reactMol1.myComIndex].translate(chg1, moleculeList);
         // // correct structure if the complex is one protein + one promoter
         // if (complexList[reactMol1.myComIndex].onFiber &&
@@ -219,8 +219,8 @@ bool break_interaction(long long int iter, size_t relIface1, size_t relIface2, M
         //     complexList[reactMol2.myComIndex].update_properties(moleculeList,
         //     molTemplateList);
         // find the new absolute interfaces
-        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        // End disabled merge-era code.
+        // End disabled merge-era code.
         int absIface1 { -1 };
         int absIface2 { -1 };
         if (currRxn.isSymmetric) {

@@ -29,13 +29,14 @@
 #include "classes/class_Membrane.hpp"
 #include "classes/class_MolTemplate.hpp"
 #include "classes/class_Vector.hpp"
-#include "split.cpp"
 
 /*! \defgroup SimulClasses
  * \brief Classes actually used for simulation objects
  */
 
 extern int propCalled;
+struct structMpiContext;
+typedef structMpiContext MpiContext;
 
 enum class TrajStatus : int {
     none = 0,
@@ -501,7 +502,7 @@ public:
     void put_back_into_SimulVolume(int& itr, Molecule& errantMol, const Membrane& membraneObject, std::vector<Molecule>& moleculeList, const std::vector<MolTemplate>& molTemplateList);
     void translate(Vector transVec, std::vector<Molecule>& moleculeList);
     // void propagate(std::vector<Molecule>& moleculeList);
-    void propagate(std::vector<Molecule>& moleculeList, const Membrane membraneObject, const std::vector<MolTemplate>& molTemplateList);
+    void propagate(std::vector<Molecule>& moleculeList, const Membrane& membraneObject, const std::vector<MolTemplate>& molTemplateList);
     void update_association_coords_sphere(std::vector<Molecule>& moleculeList, Coord iface, Coord ifacenew);
 
     Complex() = default;

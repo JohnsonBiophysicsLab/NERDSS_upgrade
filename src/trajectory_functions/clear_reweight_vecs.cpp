@@ -23,14 +23,14 @@ void clear_reweight_vecs(Molecule& oneMol)
     //     }
     //     // If not found, write the previous reweighting factor
     //     if (!found){
-    //         std::cout << "======= START REWEIGHTING INFO =======" << '\n';
+    //         std::cout << "START REWEIGHTING INFO" << '\n';
     //         std::cout << oneMol.prevlist[previd] << '\n';
     //         std::cout << oneMol.prevmyface[previd] << '\n';
     //         std::cout << oneMol.prevpface[previd] << '\n';
     //         std::cout << oneMol.prevnorm[previd] << "\t # prev norm" << '\n';
     //         std::cout << oneMol.ps_prev[previd] << "\t # prev SurvP" << '\n';
     //         std::cout << oneMol.prevsep[previd] << '\n';
-    //         std::cout << "======= END REWEIGHTING INFO =======" << std::endl;
+    //         std::cout << "END REWEIGHTING INFO" << std::endl;
     //         std::cout << "Exit for reweighting analysis with fixed initial separation." << std::endl;
     //         exit(0);
     //     }

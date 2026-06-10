@@ -164,11 +164,11 @@ void phi_rotation(Coord& reactIface1, Coord& reactIface2, int ifaceIndex2, Molec
             // If the rotation still didn't give the desired angle
             
             if (!areSameAngle(currPhi, targPhi)) {
-                // std::cout << ">>>>>>> Complex 1 >>>>>>>" << std::endl;
+                // std::cout << "Complex 1" << std::endl;
                 // for (int mol : reactCom1.memberList) {
                 //   moleculeList[mol].display_all();
                 // }
-                // std::cout << ">>>>>>> Complex 2 >>>>>>>" << std::endl;
+                // std::cout << "Complex 2" << std::endl;
                 // for (int mol : reactCom2.memberList) {
                 //   moleculeList[mol].display_all();
                 // }
