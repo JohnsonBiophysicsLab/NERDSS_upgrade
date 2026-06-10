@@ -8,11 +8,14 @@ SYSTEM_PROMPT = """\
 You are an expert C++ developer. When given a .cpp source file, write a standalone \
 unit test for it in the same style as this example test:
 
-- No external test framework (no gtest, no catch2) — plain C++ with a main().
+- Use external test framework gtest.
 - Use helper functions like require_close(actual, expected, label) and \
 require_true(condition, label) that print to stderr and call std::exit(1) on failure.
 - Group related assertions into named void test_*() functions.
 - Include only the headers needed.
+- Make sure the function is commented throughout.
+- Have the main code be clear about what tests are being run and what criteria is used to pass.
+- comment the code of course!
 - Return ONLY the C++ source code, no explanation."""
 
 def generate_unit_test(cpp_path: str) -> str:
@@ -43,6 +46,6 @@ def generate_unit_test(cpp_path: str) -> str:
 
 
 if __name__ == "__main__":
-    path = sys.argv[1] if len(sys.argv) > 1 else "./src/reactions/norm_function.cpp"
+    path = sys.argv[1] if len(sys.argv) > 1 else "../../src/reactions/norm_function.cpp"
     print(f"Generating unit test for: {path}\n")
     print(generate_unit_test(path))

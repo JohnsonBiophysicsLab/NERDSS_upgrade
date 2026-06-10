@@ -4,7 +4,12 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <gsl/gsl_rng.h>
 #include <gsl/gsl_sf_bessel.h>
+
+// Global definitions required by linked translation units.
+gsl_rng* r = nullptr;
+unsigned long totMatches = 0;
 
 double norm_function(double x, void* p);
 

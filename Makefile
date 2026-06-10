@@ -30,6 +30,7 @@ BDIR   = bin
 ODIR   = obj
 SDIR   = src
 EDIR   = EXEs
+TDIR   = tests/unit
 
 PROF   =
 
@@ -49,6 +50,10 @@ INCLUDE_FOLDERS = boundary_conditions classes error math parser reactions system
 
 ifneq (,$(filter serial,$(MAKECMDGOALS)))
 	_EXEC = nerdss
+endif
+
+ifneq (,$(filter unittest,$(MAKECMDGOALS)))
+	_EXEC = gtest_norm_main
 endif
 
 ifneq (,$(filter mpi,$(MAKECMDGOALS)))
@@ -77,9 +82,10 @@ INTEL = $(shell type icpc  >/dev/null 2>&1; echo $$?)
 GCC   = $(shell type g++   >/dev/null 2>&1; echo $$?)
 
 INCS    = $(shell gsl-config --cflags) -Iinclude
-CXXFLAGS = -std=c++0x
+INCT    = $(shell pkg-config --cflags gtest)
+CXXFLAGS = -std=c++17
 LIBS     = $(shell gsl-config --libs)
-
+LIBS2	= $(shell pkg-config --libs gtest)
 # ---------------- COMPILER SETUP
 PROF   =
 
@@ -131,10 +137,15 @@ $(EXEC): $(OBJS)
 	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(PROF) -o $@ $(EDIR)/$(@F).cpp $(OBJS) $(LIBS) $(PLANG)
 	@echo "------------"
 
+$(EXEC): $(OBJS) 
+	@echo "Compiling $(TDIR)/$(@F).cpp"
+	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(INCT) $(PROF) -o $@ $(TDIR)/$(@F).cpp $(OBJS) $(LIBS) $(LIBS2) $(PLANG) 
+	@echo "------------"
+
 $(ODIR)/%.o: $(SDIR)/%.cpp
 	@echo "Compiling $< to $@"
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(PROF) -c $< -o $@ $(PLANG) $(DEFS)
+	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(INCT) $(PROF) -c $< -o $@ $(PLANG) $(DEFS)
 	@echo "------------"
 
 clean:
