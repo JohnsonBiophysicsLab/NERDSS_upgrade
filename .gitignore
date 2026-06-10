@@ -30,9 +30,9 @@ obj/
 __pycache__/
 *.py[cod]
 /benchmark_results/
-<<<<<<< HEAD
+
 .env
-=======
+
 rng_state*
 #  by Kent 2021 07 01  (avoid anything ending in ~, .# (0-9), .bak or .swp
 *~
@@ -54,4 +54,4 @@ OUTPUT
 !/sample_inputs/**/RESTART/.gitkeep
 /sample_inputs/**/RESTARTS/**
 !/sample_inputs/**/RESTARTS/.gitkeep
->>>>>>> 5f49361cb0b3984a865eb308aa1fd0b82dd9e1fa
+
