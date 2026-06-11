@@ -10,8 +10,11 @@ baseline outputs before they land.
 
 - Core engine is C++ with `src/` split by domain and public headers under
   `include/`.
-- Current build entry points are `Makefile` and `CMakeLists.txt`; the Makefile
+- Current supported upgrade build entry point is the root `Makefile`, which
   supports `serial`, `mpi`, `debug`, and `profile`.
+- Do not add or modify CMake-based Google Test integration in the current
+  upgrade work. Keep Google Test work Makefile-only until that scope is
+  explicitly reopened.
 - Existing validation assets live mainly under `sample_inputs/VALIDATE_SUITE`
   and `run_code_tests`.
 - Current outputs are mostly ad hoc `.dat`, `.xyz`, `.psf`, restart, and text
@@ -43,10 +46,9 @@ baseline outputs before they land.
 
 Scope:
 - Create a stable branch naming scheme, for example `codex/upgrade-*`.
-- Record compiler, GSL, CMake, Make, OS, and optional MPI versions.
+- Record compiler, GSL, Make, OS, and optional MPI versions.
 - Decide whether C++11 remains required or whether the project can move to
-  C++14/C++17. The current CMake file uses C++11 while README badges mention
-  C++ >=14, so this must be resolved before broad modernization.
+  C++14/C++17 before broad modernization.
 - Add `docs/upgrade/decision_log.md` and `docs/upgrade/validation_log.md`.
 
 Deliverables:
@@ -64,7 +66,7 @@ Dependencies:
 ### Agent B: Baseline Build And Smoke Runner
 
 Scope:
-- Verify `make serial`, `make mpi` when MPI is available, and CMake serial build.
+- Verify `make serial` and `make mpi` when MPI is available.
 - Add a small script, for example `tools/run_smoke_tests.py`, that builds and
   runs a short sample input in an isolated temporary directory.
 - Capture stdout, stderr, exit code, produced files, and runtime.
@@ -156,8 +158,8 @@ Dependencies:
 ### Agent F: Static Analysis And Sanitizer Builds
 
 Scope:
-- Add AddressSanitizer/UndefinedBehaviorSanitizer debug targets through CMake
-  and Make, preserving the existing debug target intent.
+- Add AddressSanitizer/UndefinedBehaviorSanitizer debug targets through the
+  Makefile, preserving the existing debug target intent.
 - Run `clang-tidy` on focused directories first.
 - Inventory warnings by category and priority.
 
@@ -421,6 +423,12 @@ Dependencies:
 
 ## Phase 7: Automated Testing And GitHub Actions
 
+Scope warning for all agents:
+- Do not implement or extend CMake for Google Test in this phase. This cleanup
+  is Makefile-only. Use `make unittest` and related Makefile variables for
+  Google Test work unless a later reviewed change request explicitly reopens
+  CMake scope.
+
 ### Agent Q: Unit Test Framework
 
 Scope:
@@ -433,7 +441,7 @@ Scope:
 
 Deliverables:
 - `tests/unit/` structure.
-- CMake test target with `ctest`.
+- Makefile test target for fast unit tests.
 - Initial unit tests for low-risk modules.
 
 Acceptance criteria:
@@ -513,11 +521,11 @@ Dependencies:
 | Agent | Workstream | Primary paths | Output |
 | --- | --- | --- | --- |
 | A | Environment and policy | README, docs, build files | Environment and branch policy |
-| B | Build and smoke runner | Makefile, CMakeLists, tools | Repeatable build/smoke command |
+| B | Build and smoke runner | Makefile, tools | Repeatable build/smoke command |
 | C | Deterministic regression | sample_inputs, tests | Fixed-seed validation harness |
 | D | Stochastic validation | sample_inputs, tests | Statistical coherence checks |
 | E | Style tooling | repo root, src, include | clang-format/tidy configs |
-| F | Static/sanitizer safety | CMake, Makefile, src | Sanitizer and warning backlog |
+| F | Static/sanitizer safety | Makefile, src | Sanitizer and warning backlog |
 | G | Architecture map | docs, src, include | SOLID boundary plan |
 | H | Main loop extraction | EXEs, src orchestration | Testable simulation runner |
 | I | Parser refactor | src/parser, include/parser | Parser module and tests |
@@ -528,7 +536,7 @@ Dependencies:
 | N | Crash hardening | src, tests | Segfault fixes and repro tests |
 | O | Benchmarks | benchmarks, docs/upgrade | Benchmark harness |
 | P | Profiling | benchmarks, docs/upgrade | Hotspot report |
-| Q | Unit tests | tests/unit, CMake | Unit test framework |
+| Q | Unit tests | tests/unit, Makefile | Unit test framework |
 | R | CI | .github/workflows | Automated checks |
 | S | User docs | README, docs | Migration and usage docs |
 | T | Backtracking docs | docs/upgrade | Change logs and risk register |

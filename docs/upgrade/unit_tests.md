@@ -1,19 +1,13 @@
 # C++ Unit Tests
 
-Agent Q owns the Phase 7 unit test framework. The baseline CTest target uses a
-small standard-library test executable and does not require Google Test.
+Agent Q owns the Phase 7 unit test framework. For the current Google Test
+cleanup, the supported path is Makefile-only.
 
-## CTest Command
+## Scope Warning
 
-```bash
-cmake -S . -B build-unit-tests
-cmake --build build-unit-tests --target nerdss_unit_tests
-ctest --test-dir build-unit-tests --output-on-failure
-```
-
-The first test target covers low-risk `Coord` and `Vector` helper behavior:
-rounding, colinearity, magnitude, normalization, dot products, cross products,
-projection, and angle calculation.
+Do not add or extend CMake/CTest integration for Google Test in this slice.
+That work is out of scope for now. Use the Makefile test target below, and only
+reopen CMake work after a separate reviewed request explicitly asks for it.
 
 ## Google Test Command
 
@@ -38,6 +32,3 @@ Additional Google Test flags can be forwarded with `GTEST_FLAGS`, for example:
 ```bash
 make unittest GTEST_FLAGS="--gtest_filter=NormFunctionTest.* --gtest_print_time=1"
 ```
-
-Generated build directories such as `build-unit-tests/` should not be
-committed.
