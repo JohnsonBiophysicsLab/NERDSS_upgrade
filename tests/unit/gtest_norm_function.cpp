@@ -1,8 +1,3 @@
-// Unit test for norm_function from 2D_reaction_table_functions.cpp
-// This test verifies the behavior of norm_function, which computes the
-// integrand used in 2D reaction table calculations. The function depends on
-// the modified Bessel function of the first kind (scaled), I0.
-
 #include "reactions/bimolecular/2D_reaction_table_functions.hpp"
 
 #include <gsl/gsl_sf_bessel.h>
@@ -11,130 +6,91 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
-// ---------------------------------------------------------------------------
-// Helper functions for assertions. These print a clear message to stderr and
-// exit with a non-zero code if the test fails, matching the required style.
-// ---------------------------------------------------------------------------
+namespace {
 
-// Check that 'actual' is close to 'expected' within a small tolerance.
-void require_close(double actual, double expected, const std::string& label)
+bool verbose_output_enabled()
 {
-    const double tol = 1e-9;
-    if (std::abs(actual - expected) > tol) {
-        std::cerr << "FAILED [" << label << "]: expected " << expected
-                  << " but got " << actual << " (diff "
-                  << std::abs(actual - expected) << ")\n";
-        std::exit(1);
-    }
+    const char* value = std::getenv("NERDSS_TEST_VERBOSE");
+    return value != nullptr && std::string(value) != "0";
 }
 
-// Check that a boolean condition holds true.
-void require_true(bool condition, const std::string& label)
+void log_detail(const std::string& label, double actual, double expected)
 {
-    if (!condition) {
-        std::cerr << "FAILED [" << label << "]: condition was false\n";
-        std::exit(1);
+    if (!verbose_output_enabled()) {
+        return;
     }
+
+    std::cout << label << ": actual=" << actual
+              << " expected=" << expected
+              << " diff=" << std::abs(actual - expected) << '\n';
 }
 
-// ---------------------------------------------------------------------------
-// Reference implementation of norm_function, used to compute the expected
-// value independently so we can compare against the function under test.
-// ---------------------------------------------------------------------------
 double reference_norm(double x, const IntegrandParams& params)
 {
-    // temp is the argument used by the scaled Bessel function I0
-    double temp = x * params.r0 / (2.0 * params.D * params.t);
-    // temp2 is the leading prefactor x / (2 D t)
-    double temp2 = x / (2.0 * params.D * params.t);
-    // temp3 is the exponential term
-    double temp3 = std::exp(temp - (params.r0 * params.r0 + (x * x))
-                                       / (4.0 * params.t * params.D));
-    // multiply prefactor, exponential, and the scaled Bessel function
-    return temp2 * temp3 * gsl_sf_bessel_I0_scaled(temp);
+    const double temp = x * params.r0 / (2.0 * params.D * params.t);
+    const double prefactor = x / (2.0 * params.D * params.t);
+    const double exponential = std::exp(
+        temp - (params.r0 * params.r0 + (x * x)) / (4.0 * params.t * params.D));
+
+    return prefactor * exponential * gsl_sf_bessel_I0_scaled(temp);
 }
 
-// ---------------------------------------------------------------------------
-// Test: norm_function returns the same value as our reference computation
-// for a typical set of parameters.
-// ---------------------------------------------------------------------------
-void test_matches_reference()
+IntegrandParams make_params(double r0, double diffusion, double time)
 {
-    // Set up a realistic set of integrand parameters.
-    IntegrandParams params;
-    params.r0 = 1.0; // initial separation
-    params.D = 0.5;  // diffusion coefficient
-    params.t = 2.0;  // time
+    IntegrandParams params {};
+    params.r0 = r0;
+    params.D = diffusion;
+    params.t = time;
+    return params;
+}
 
-    // Test the function at several different x values.
+void expect_close(double actual, double expected, const std::string& label)
+{
+    log_detail(label, actual, expected);
+    EXPECT_NEAR(actual, expected, 1.0e-9) << label;
+}
+
+} // namespace
+
+TEST(NormFunctionTest, MatchesReferenceAcrossSamplePoints)
+{
+    const IntegrandParams params = make_params(1.0, 0.5, 2.0);
+
     for (double x : { 0.1, 0.5, 1.0, 2.0, 5.0 }) {
-        double actual = norm_function(x, &params);
-        double expected = reference_norm(x, params);
-        require_close(actual, expected,
-            "norm_function matches reference at x=" + std::to_string(x));
+        expect_close(norm_function(x, const_cast<IntegrandParams*>(&params)),
+            reference_norm(x, params),
+            "norm_function at x=" + std::to_string(x));
     }
 }
 
-// ---------------------------------------------------------------------------
-// Test: at x = 0 the prefactor (x / (2 D t)) is zero, so the integrand must
-// be exactly zero regardless of the other parameters.
-// ---------------------------------------------------------------------------
-void test_zero_at_x_zero()
+TEST(NormFunctionTest, IsZeroAtOrigin)
 {
-    IntegrandParams params;
-    params.r0 = 1.0;
-    params.D = 0.5;
-    params.t = 2.0;
+    IntegrandParams params = make_params(1.0, 0.5, 2.0);
 
-    double actual = norm_function(0.0, &params);
-    require_close(actual, 0.0, "norm_function is zero at x=0");
+    expect_close(norm_function(0.0, &params), 0.0, "norm_function at x=0");
 }
 
-// ---------------------------------------------------------------------------
-// Test: the integrand should always be non-negative for positive parameters,
-// since each factor (prefactor, exponential, scaled Bessel I0) is positive.
-// ---------------------------------------------------------------------------
-void test_non_negative()
+TEST(NormFunctionTest, IsNonNegativeForPositiveParameters)
 {
-    IntegrandParams params;
-    params.r0 = 2.0;
-    params.D = 1.0;
-    params.t = 1.0;
+    IntegrandParams params = make_params(2.0, 1.0, 1.0);
 
     for (double x : { 0.1, 0.5, 1.0, 3.0, 10.0 }) {
-        double value = norm_function(x, &params);
-        require_true(value >= 0.0,
-            "norm_function non-negative at x=" + std::to_string(x));
+        const double value = norm_function(x, &params);
+        if (verbose_output_enabled()) {
+            std::cout << "norm_function at x=" << x << ": value=" << value << '\n';
+        }
+        EXPECT_GE(value, 0.0) << "x=" << x;
     }
 }
 
-// ---------------------------------------------------------------------------
-// Test: when r0 = 0, the Bessel argument temp becomes 0 and I0_scaled(0) = 1.
-// This lets us verify a simplified closed-form expression.
-// ---------------------------------------------------------------------------
-void test_r0_zero_simplification()
+TEST(NormFunctionTest, SimplifiesWhenInitialSeparationIsZero)
 {
-    IntegrandParams params;
-    params.r0 = 0.0; // initial separation zero
-    params.D = 0.5;
-    params.t = 2.0;
+    IntegrandParams params = make_params(0.0, 0.5, 2.0);
+    const double x = 1.5;
+    const double expected = (x / (2.0 * params.D * params.t))
+        * std::exp(-(x * x) / (4.0 * params.t * params.D));
 
-    double x = 1.5;
-    // With r0 = 0: temp = 0, I0_scaled(0) = 1, so the result simplifies to
-    // (x / (2 D t)) * exp(-x^2 / (4 t D)).
-    double expected = (x / (2.0 * params.D * params.t))
-                      * std::exp(-(x * x) / (4.0 * params.t * params.D));
-    double actual = norm_function(x, &params);
-    require_close(actual, expected,
-        "norm_function simplifies correctly when r0=0");
+    expect_close(norm_function(x, &params), expected, "r0=0 simplification");
 }
-
-// ---------------------------------------------------------------------------
-// GoogleTest wrappers so the test functions are picked up by the test runner.
-// ---------------------------------------------------------------------------
-TEST(NormFunctionTest, MatchesReference)     { test_matches_reference(); }
-TEST(NormFunctionTest, ZeroAtXZero)          { test_zero_at_x_zero(); }
-TEST(NormFunctionTest, NonNegative)          { test_non_negative(); }
-TEST(NormFunctionTest, R0ZeroSimplification) { test_r0_zero_simplification(); }
-

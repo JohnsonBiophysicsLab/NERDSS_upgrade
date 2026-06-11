@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
 
 jobs:
   build:
@@ -13,14 +12,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install dependencies (GSL and MPI)
-      run: sudo apt-get update && sudo apt-get install -y openmpi-bin libopenmpi-dev libgsl-dev
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y g++ make pkg-config openmpi-bin libopenmpi-dev libgsl-dev libgtest-dev
 
     - name: Clean before serial build
       run: make clean
 
     - name: make serial
       run: make serial
+
+    - name: Run Google Test unit tests
+      run: make unittest TEST_VERBOSE=1
 
     - name: Clean before MPI build
       run: make clean

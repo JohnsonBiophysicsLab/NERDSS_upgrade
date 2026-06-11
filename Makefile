@@ -34,7 +34,7 @@ TDIR   = tests/unit
 
 PROF   =
 
-.PHONY: any debug profile clean
+.PHONY: any debug profile clean unittest test check-gtest
 
 # ---------------- REQUIREMENTS: gsl and directories
 hasGSL = $(shell type gsl-config >/dev/null 2>&1; echo $$?)
@@ -50,10 +50,6 @@ INCLUDE_FOLDERS = boundary_conditions classes error math parser reactions system
 
 ifneq (,$(filter serial,$(MAKECMDGOALS)))
 	_EXEC = nerdss
-endif
-
-ifneq (,$(filter unittest,$(MAKECMDGOALS)))
-	_EXEC = gtest_norm_main
 endif
 
 ifneq (,$(filter mpi,$(MAKECMDGOALS)))
@@ -76,16 +72,33 @@ endif
 
 SRCS = $(foreach dir,$(INCLUDE_FOLDERS),$(wildcard $(SDIR)/$(dir)/*.cpp))
 EXEC = $(patsubst %,$(BDIR)/%,$(_EXEC))
+RUNTIME_GOALS = $(filter serial mpi,$(MAKECMDGOALS))
+OPTION_GOALS = $(filter debug profile,$(MAKECMDGOALS))
 
 OS    := $(shell uname)
 INTEL = $(shell type icpc  >/dev/null 2>&1; echo $$?)
 GCC   = $(shell type g++   >/dev/null 2>&1; echo $$?)
 
 INCS    = $(shell gsl-config --cflags) -Iinclude
-INCT    = $(shell pkg-config --cflags gtest)
-CXXFLAGS = -std=c++17
+CXXFLAGS = -std=c++0x
 LIBS     = $(shell gsl-config --libs)
-LIBS2	= $(shell pkg-config --libs gtest)
+
+GTEST_BIN = $(BDIR)/gtest_norm_main
+GTEST_SRCS = \
+	$(TDIR)/gtest_norm_main.cpp \
+	$(TDIR)/gtest_norm_function.cpp \
+	$(SDIR)/reactions/norm_function.cpp
+GTEST_CFLAGS ?= $(shell pkg-config --cflags gtest 2>/dev/null)
+GTEST_LIBS ?= $(shell pkg-config --libs gtest 2>/dev/null)
+GTEST_CXXFLAGS = -std=c++17
+GTEST_FLAGS ?=
+TEST_ENV =
+
+ifeq ($(TEST_VERBOSE),1)
+	GTEST_FLAGS += --gtest_brief=0 --gtest_print_time=1
+	TEST_ENV = NERDSS_TEST_VERBOSE=1
+endif
+
 # ---------------- COMPILER SETUP
 PROF   =
 
@@ -125,27 +138,49 @@ OBJS = $(patsubst $(SDIR)/%.cpp,$(ODIR)/%.o,$(SRCS))
 # ---------------- RULES
 syntax:
 	@echo "------------------------------------"
-	@printf '\033[31m%s\033[0m\n' " USAGE: make serial|mpi [debug] [profile]"
+	@printf '\033[31m%s\033[0m\n' " USAGE: make serial|mpi [debug] [profile] or make unittest [TEST_VERBOSE=1] [GTEST_FLAGS='...']"
 	@echo "------------------------------------"
 	exit 0
 
-$(MAKECMDGOALS): $(EXEC)
-	@echo "Finished making (re-)building $(MAKECMDGOALS) version, $(EXEC)."
+$(RUNTIME_GOALS): $(EXEC)
+	@echo "Finished making (re-)building $(RUNTIME_GOALS) version, $(EXEC)."
+
+$(OPTION_GOALS): $(RUNTIME_GOALS)
+	@:
 
 $(EXEC): $(OBJS)
 	@echo "Compiling $(EDIR)/$(@F).cpp"
 	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(PROF) -o $@ $(EDIR)/$(@F).cpp $(OBJS) $(LIBS) $(PLANG)
 	@echo "------------"
 
-$(EXEC): $(OBJS) 
-	@echo "Compiling $(TDIR)/$(@F).cpp"
-	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(INCT) $(PROF) -o $@ $(TDIR)/$(@F).cpp $(OBJS) $(LIBS) $(LIBS2) $(PLANG) 
+unittest: $(GTEST_BIN)
+	$(TEST_ENV) $(GTEST_BIN) $(GTEST_FLAGS)
+
+test: unittest
+
+check-gtest:
+	@if [ -n "$(strip $(GTEST_CFLAGS)$(GTEST_LIBS))" ]; then \
+		exit 0; \
+	fi; \
+	if ! command -v pkg-config >/dev/null 2>&1; then \
+		echo "Google Test targets require Google Test. Install pkg-config plus Google Test, or pass GTEST_CFLAGS/GTEST_LIBS to 'make unittest'."; \
+		exit 1; \
+	fi; \
+	if ! pkg-config --exists gtest; then \
+		echo "Google Test targets require the gtest pkg-config package. Install Google Test development files, set PKG_CONFIG_PATH, or pass GTEST_CFLAGS/GTEST_LIBS to 'make unittest'."; \
+		exit 1; \
+	fi
+
+$(GTEST_BIN): check-gtest $(GTEST_SRCS)
+	@echo "Compiling Google Test unit target $@"
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(CXXFLAGS) $(GTEST_CXXFLAGS) $(INCS) $(GTEST_CFLAGS) $(PROF) -o $@ $(GTEST_SRCS) $(LIBS) $(GTEST_LIBS) $(PLANG)
 	@echo "------------"
 
 $(ODIR)/%.o: $(SDIR)/%.cpp
 	@echo "Compiling $< to $@"
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(INCT) $(PROF) -c $< -o $@ $(PLANG) $(DEFS)
+	$(CC) $(CFLAGS) $(CXXFLAGS) $(INCS) $(PROF) -c $< -o $@ $(PLANG) $(DEFS)
 	@echo "------------"
 
 clean:
