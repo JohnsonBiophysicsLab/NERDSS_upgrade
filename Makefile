@@ -70,7 +70,7 @@ hasGTEST := $(shell pkg-config --exists gtest 2>/dev/null; echo $$?)
 ifeq ($(hasGTEST),1)
 $(error " gtest must be installed and discoverable by pkg-config.")
 endif
-_UTEXEC = $(UTBDIR)/gtest_norm_main
+_UTEXEC = $(UTBDIR)/gtest_main
 $(shell mkdir -p $(UTODIR))
 $(shell mkdir -p $(UTBDIR))
 endif

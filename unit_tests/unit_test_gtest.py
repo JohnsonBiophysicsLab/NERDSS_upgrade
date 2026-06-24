@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 import anthropic
 
 from dotenv import load_dotenv
@@ -6,7 +7,8 @@ load_dotenv()
 
 SYSTEM_PROMPT = """\
 You are an expert C++ developer. When given a .cpp source file, write a standalone \
-unit test for it in the same style as this example test:
+unit test for it that includes verbose console output of what function in which source file \
+is being tested and what the tests are actually doing.
 
 - Use external test framework gtest.
 - Use helper functions like require_close(actual, expected, label) and \
@@ -26,7 +28,7 @@ def generate_unit_test(cpp_path: str) -> str:
 
     response = client.messages.create(
         model="claude-opus-4-8",
-        max_tokens=2048,
+        max_tokens=4096,
         system=SYSTEM_PROMPT,
         messages=[
             {
@@ -46,6 +48,15 @@ def generate_unit_test(cpp_path: str) -> str:
 
 
 if __name__ == "__main__":
-    path = sys.argv[1] if len(sys.argv) > 1 else "../../src/reactions/norm_function.cpp"
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+    else:
+        print("You must provide a source file to be unit tested.")
+        quit()
     print(f"Generating unit test for: {path}\n")
-    print(generate_unit_test(path))
+
+    src_path = Path(path)
+    out_path = Path("src") / ("test_" + src_path.name)
+
+    out_path.write_text(generate_unit_test(path))
+    print(f"Unit test written to: {out_path}")
