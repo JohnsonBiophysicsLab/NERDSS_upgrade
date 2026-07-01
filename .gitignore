@@ -54,4 +54,4 @@ OUTPUT
 !/sample_inputs/**/RESTART/.gitkeep
 /sample_inputs/**/RESTARTS/**
 !/sample_inputs/**/RESTARTS/.gitkeep
-
+profile-runs/**
