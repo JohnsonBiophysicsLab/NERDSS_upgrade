@@ -16,7 +16,9 @@ require_true(condition, label) that print to stderr and call std::exit(1) on fai
 - Group related assertions into named void test_*() functions.
 - Include only the headers needed.
 - Make sure the function is commented throughout.
-- Have the main code be clear about what tests are being run and what criteria is used to pass.
+- Have the code be clear about what tests are being run and what criteria is used to pass.
+- Do not write a main function because this will be part of a larger suite of tests.
+- Do not enclose the source code in a markdown fenced block.
 - comment the code of course!
 - Return ONLY the C++ source code, no explanation."""
 
@@ -28,7 +30,7 @@ def generate_unit_test(cpp_path: str) -> str:
 
     response = client.messages.create(
         model="claude-opus-4-8",
-        max_tokens=4096,
+        max_tokens=8192,
         system=SYSTEM_PROMPT,
         messages=[
             {
