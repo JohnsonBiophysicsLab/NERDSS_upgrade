@@ -5,7 +5,7 @@
 ./src/parser/display_all_MolTemplates.cpp
 ./src/reactions/update_complex_tmp_com_crds.cpp
 ./src/reactions/check_bimolecular_reactions.cpp
-./src/reactions/norm_function.cpp
+
 ./src/system_setup/areInVicinity.cpp
 ./src/io/write_bonded_complex_json.cpp
 ./src/parser/parse_reaction.cpp
