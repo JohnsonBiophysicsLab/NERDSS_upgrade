@@ -27,8 +27,7 @@ double calc_pirr(gsl_matrix* pirMatrix, gsl_matrix* survMatrix, double RStepSize
                  double r, double r0, double a);
 
 // ---------------------------------------------------------------------------
-// Helper assertion functions: print verbose diagnostics to stderr and abort
-// the whole program with exit(1) if a check fails.
+// Helper assertion functions: print verbose diagnostics to stderr.
 // ---------------------------------------------------------------------------
 
 // Compare two doubles within a small tolerance.
@@ -41,10 +40,11 @@ static void require_close(double actual, double expected, const char* label)
               << " (tol=" << tol << ")\n";
     if (std::fabs(actual - expected) > tol) {
         std::cerr << "    [FAIL ] " << label
-                  << " : difference " << std::fabs(actual - expected)
-                  << " exceeds tolerance " << tol << "\n";
-        std::exit(1);
+                 << " : difference " << std::fabs(actual - expected)
+                 << " exceeds tolerance " << tol << "\n";
+        
     }
+    EXPECT_FALSE(std::fabs(actual - expected) > tol);
     std::cerr << "    [ OK  ] " << label << "\n";
 }
 
@@ -55,8 +55,9 @@ static void require_true(bool condition, const char* label)
               << (condition ? "true" : "false") << "\n";
     if (!condition) {
         std::cerr << "    [FAIL ] " << label << "\n";
-        std::exit(1);
+       
     }
+   EXPECT_FALSE(!condition);
     std::cerr << "    [ OK  ] " << label << "\n";
 }
 

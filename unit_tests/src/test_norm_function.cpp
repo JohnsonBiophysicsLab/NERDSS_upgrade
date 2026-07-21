@@ -13,8 +13,7 @@
 #include <iostream>
 
 // ---------------------------------------------------------------------------
-// Helper functions for assertions. These print a clear message to stderr and
-// exit with a non-zero code if the test fails, matching the required style.
+// Helper functions for assertions. These print a clear message to stderr, matching the required style.
 // ---------------------------------------------------------------------------
 
 // Check that 'actual' is close to 'expected' within a small tolerance.
@@ -25,8 +24,9 @@ void require_close(double actual, double expected, const std::string& label)
         std::cerr << "FAILED [" << label << "]: expected " << expected
                   << " but got " << actual << " (diff "
                   << std::abs(actual - expected) << ")\n";
-        std::exit(1);
+        
     }
+    EXPECT_FALSE(std::abs(actual - expected) > tol);
 }
 
 // Check that a boolean condition holds true.
@@ -34,8 +34,9 @@ void require_true(bool condition, const std::string& label)
 {
     if (!condition) {
         std::cerr << "FAILED [" << label << "]: condition was false\n";
-        std::exit(1);
+        
     }
+    EXPECT_FALSE(!condition);
 }
 
 // ---------------------------------------------------------------------------

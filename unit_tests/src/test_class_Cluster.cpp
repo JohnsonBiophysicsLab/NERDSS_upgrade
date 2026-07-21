@@ -18,7 +18,6 @@
 //
 // The test framework is GoogleTest, but we additionally use small helper
 // functions (require_close / require_true) that print verbose diagnostics to
-// stderr and call std::exit(1) on failure, as requested.
 // =====================================================================================
 
 #include <gtest/gtest.h>
@@ -60,8 +59,9 @@ static void require_close(double actual, double expected, const std::string& lab
     if (std::fabs(actual - expected) > tol) {
         std::cerr << "    FAILED: " << label << " differ by "
                   << std::fabs(actual - expected) << " (tol=" << tol << ")" << std::endl;
-        std::exit(1);
+       
     }
+    EXPECT_FALSE(std::fabs(actual - expected) > tol);
 }
 
 // Verify a boolean condition; abort on failure.
@@ -71,8 +71,9 @@ static void require_true(bool condition, const std::string& label)
               << " : " << (condition ? "true" : "false") << std::endl;
     if (!condition) {
         std::cerr << "    FAILED: condition '" << label << "' was not true" << std::endl;
-        std::exit(1);
+        
     }
+    EXPECT_FALSE(!condition);
 }
 
 // =====================================================================================
@@ -263,7 +264,6 @@ void test_define_cluster_pairs()
 
 // =====================================================================================
 // GoogleTest wrappers. Each simply invokes the verbose test_* function above.
-// (If any require_* helper fails it calls std::exit(1), aborting the whole run.)
 // =====================================================================================
 
 TEST(ClusterTests, ClusterPairConstructors)          { test_clusterpair_constructors(); }

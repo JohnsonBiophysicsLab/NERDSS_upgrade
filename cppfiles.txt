@@ -1,5 +1,3 @@
-./src/classes/class_Cluster.cpp
-./src/classes/class_Rxns.cpp
 ./src/classes/class_Vector.cpp
 ./src/classes/class_Coord.cpp
 ./src/classes/class_MDTimer.cpp
@@ -8,7 +6,6 @@
 ./src/classes/class_MolTemplate.cpp
 ./src/classes/class_SimulVolume.cpp
 ./src/classes/class_Observable.cpp
-./src/classes/class_bngl_parser_functions.cpp
 ./src/classes/class_Quat.cpp
 ./src/boundary_conditions/reflect_traj_complex_rad_rot.cpp
 ./src/boundary_conditions/reflect_complex_rad_rot.cpp
