@@ -11,8 +11,9 @@ unit test for it that includes verbose console output of what function in which 
 is being tested and what the tests are actually doing.
 
 - Use external test framework gtest.
-- Use helper functions like require_close(actual, expected, label) and \
-require_true(condition, label) that print to stderr and call std::exit(1) on failure.
+- Use the EXPECT_* assertions provided by googletests and print useful information to stderr.
+- Avoid fatal errors so that all tests run even if some fail.
+- Be sure to test all functions in a given file.
 - Group related assertions into named void test_*() functions.
 - Include only the headers needed.
 - Make sure the function is commented throughout.

@@ -93,18 +93,6 @@ std::ostream &operator<<(std::ostream &os, const std::array<double, 3> &arr) {
   return os;
 }
 
-void operator+(Coord &c, const double scal) {
-  c.x += scal;
-  c.y += scal;
-  c.z += scal;
-}
-
-void operator*(Coord &c, const double scal) {
-  c.x *= scal;
-  c.y *= scal;
-  c.z *= scal;
-}
-
 std::ostream &operator<<(std::ostream &os, const Molecule &mol) {
   os << mol.tmpComCoord << std::endl;
   for (auto &iface : mol.tmpICoords)

@@ -33,7 +33,7 @@
 /*! \defgroup SimulClasses
  * \brief Classes actually used for simulation objects
  */
-
+std::ostream &operator<<(std::ostream &os, const std::array<double, 3> &arr);
 extern int propCalled;
 struct structMpiContext;
 typedef structMpiContext MpiContext;
