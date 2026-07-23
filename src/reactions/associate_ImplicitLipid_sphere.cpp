@@ -185,8 +185,6 @@ void associate_implicitlipid_sphere(
     }
     /* CHECKS */
     bool cancelAssoc { false };
-
-    check_if_spans_sphere(cancelAssoc, params, reactCom1, reactCom2, moleculeList, membraneObject, membraneObject.sphereR);
     if (cancelAssoc == true)
         counterArrays.nCancelSpanBox++;
     if (cancelAssoc == false) {

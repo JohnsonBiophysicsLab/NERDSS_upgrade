@@ -367,13 +367,11 @@ void associate_sphere(long long int iter,
         bool cancelAssoc { false };
         check_for_structure_overlap(cancelAssoc, reactCom1, reactCom2, moleculeList, params, molTemplateList);
 
-        if (cancelAssoc == false) {
-            check_if_spans_sphere(cancelAssoc, params, reactCom1, reactCom2, moleculeList, membraneObject, membraneObject.sphereR);
-            if (cancelAssoc == true)
+        if (cancelAssoc == true) {
                 counterArrays.nCancelSpanBox++;
-        } else
             counterArrays.nCancelOverlapPartner++; //true for structure overlap check.
-
+        }
+        
         if (cancelAssoc == false) {
             check_for_structure_overlap_system(cancelAssoc, reactCom1, reactCom2,
                 moleculeList, params, molTemplateList,

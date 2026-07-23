@@ -72,7 +72,6 @@ void reflect_traj_complex_rad_rot_nocheck_sphere(const Parameters& params, Compl
 //     std::vector<Molecule>& moleculeList, const Membrane& membraneObject);
 void check_if_spans(bool& cancelAssoc, const Parameters& params, Complex& reactCom1, Complex& reactCom2, std::vector<Molecule>& moleculeList, const Membrane& membraneObject);
 void check_if_spans_box(bool& cancelAssoc, const Parameters& params, Complex& reactCom1, Complex& reactCom2, std::vector<Molecule>& moleculeList, const Membrane& membraneObject);
-void check_if_spans_sphere(bool& cancelAssoc, const Parameters& params, Complex& reactCom1, Complex& reactCom2, std::vector<Molecule>& moleculeList, const Membrane& membraneObject, double radius);
 
 /*! \ingroup BoundaryConditions
  * \brief evaluates size of reflection off of walls during association, stores in temporary vector traj.

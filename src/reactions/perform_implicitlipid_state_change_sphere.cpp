@@ -249,9 +249,6 @@ void perform_implicitlipid_state_change_sphere(int stateChangeIface, int facilit
     /* CHECKS */
     bool cancelAssoc { false };
     check_for_structure_overlap(cancelAssoc, facilitatorCom, stateChangeCom, moleculeList, params, molTemplateList);
-
-    if (cancelAssoc == false)
-        check_if_spans_sphere(cancelAssoc, params, facilitatorCom, stateChangeCom, moleculeList, membraneObject, membraneObject.sphereR);
     if (cancelAssoc == false)
         check_for_structure_overlap_system(cancelAssoc, facilitatorCom, stateChangeCom, moleculeList, params, molTemplateList, complexList, forwardRxns, backRxns);
 

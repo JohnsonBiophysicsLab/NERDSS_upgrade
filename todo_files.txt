@@ -1,17 +1,7 @@
 
-./src/classes/class_Coord.cpp
-./src/classes/class_MDTimer.cpp
-./src/classes/class_Molecule_Complex.cpp
-./src/classes/class_Parameters.cpp
-./src/classes/class_MolTemplate.cpp
-./src/classes/class_SimulVolume.cpp
-./src/classes/class_Observable.cpp
-
-./src/classes/class_Quat.cpp
 ./src/boundary_conditions/reflect_traj_complex_rad_rot.cpp
 ./src/boundary_conditions/reflect_complex_rad_rot.cpp
 ./src/boundary_conditions/reflect_traj_complex_rad_rot_sphere.cpp
-./src/boundary_conditions/check_if_spans_sphere.cpp
 ./src/boundary_conditions/reflect_traj_check_span.cpp
 ./src/boundary_conditions/reflect_traj_complex_rad_rot_nocheck.cpp
 ./src/boundary_conditions/reflect_traj_tmp_crds_box.cpp
@@ -25,7 +15,6 @@
 ./src/boundary_conditions/reflect_traj_check_span_box.cpp
 ./src/boundary_conditions/reflect_traj_complex_rad_rot_nocheck_box.cpp
 ./src/boundary_conditions/check_if_spans_box.cpp
-
 ./src/boundary_conditions/check_if_spans.cpp
 ./src/boundary_conditions/reflect_traj_complex_compartment.cpp
 ./src/boundary_conditions/reflect_traj_tmp_crds_compartment.cpp
