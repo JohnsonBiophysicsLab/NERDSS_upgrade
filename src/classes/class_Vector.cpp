@@ -115,7 +115,7 @@ void Vector::normalize()
         magnitude = 1;
         //    std::cout <<"WARNING: NORMALIZING A VECTOR OF ZERO LENGTH "<<std::endl;
     }
-    *this = *this /= magnitude;
+    *this = *this / magnitude;
     calc_magnitude();
 }
 
