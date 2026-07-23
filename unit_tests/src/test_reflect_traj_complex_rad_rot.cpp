@@ -68,6 +68,36 @@ void reflectTraj_buildSimpleSystem(std::vector<Molecule>& moleculeList,
     targCom.radius = 1.0;
 }
 
+void reflectTraj_buildSimpleSystem_outside_compartment(std::vector<Molecule>& moleculeList,
+                                   Complex& targCom,
+                                   bool enforceCompartmentBC) {
+    // Create a single molecule with one interface.
+    Molecule mol;
+    mol.index = 0;
+    mol.enforceCompartmentBC = enforceCompartmentBC;
+
+    // Place the molecule center-of-mass at the origin.
+    mol.comCoord = Coord{26.0, 0.0, 0.0};
+
+    // Give the molecule a single interface coincident with the COM so that
+    // rotation/translation math stays trivially bounded.
+    Molecule::Iface iface;
+    iface.coord = Coord{26.0, 0.0, 0.0};
+    mol.interfaceList.clear();
+    mol.interfaceList.push_back(iface);
+
+    moleculeList.clear();
+    moleculeList.push_back(mol);
+
+    // Build the complex referencing that single molecule.
+    targCom.index = 0;
+    targCom.memberList.clear();
+    targCom.memberList.push_back(0);
+    targCom.comCoord = Coord{26.0, 0.0, 0.0};
+    targCom.trajTrans = Vector {0.0, 0.0, 0.0};
+    targCom.radius = 1.0;
+}
+
 // ---------------------------------------------------------------------------
 // Helper: build a Membrane object configured as a cubic box.
 // ---------------------------------------------------------------------------
@@ -149,7 +179,7 @@ void test_reflectTraj_BoxWithCompartmentBC() {
     Parameters params;
     std::vector<Molecule> moleculeList;
     Complex targCom;
-    reflectTraj_buildSimpleSystem(moleculeList, targCom,
+    reflectTraj_buildSimpleSystem_outside_compartment(moleculeList, targCom,
                                   /*enforceCompartmentBC=*/true);
 
     Membrane membrane = reflectTraj_makeBoxMembrane();
