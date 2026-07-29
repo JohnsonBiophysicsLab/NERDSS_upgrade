@@ -1,14 +1,3 @@
-
-./src/boundary_conditions/reflect_traj_complex_rad_rot.cpp
-./src/boundary_conditions/reflect_complex_rad_rot.cpp
-./src/boundary_conditions/reflect_traj_complex_rad_rot_sphere.cpp
-./src/boundary_conditions/reflect_traj_check_span.cpp
-./src/boundary_conditions/reflect_traj_complex_rad_rot_nocheck.cpp
-./src/boundary_conditions/reflect_traj_tmp_crds_box.cpp
-./src/boundary_conditions/reflect_traj_tmp_crds.cpp
-./src/boundary_conditions/reflect_traj_check_span_sphere.cpp
-./src/boundary_conditions/reflect_complex_compartment.cpp
-./src/boundary_conditions/reflect_traj_complex_rad_rot_box.cpp
 ./src/boundary_conditions/reflect_complex_rad_rot_sphere.cpp
 ./src/boundary_conditions/reflect_traj_complex_rad_rot_nocheck_sphere.cpp
 ./src/boundary_conditions/reflect_traj_tmp_crds_sphere.cpp

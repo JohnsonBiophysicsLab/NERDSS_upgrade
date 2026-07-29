@@ -4,6 +4,7 @@
 *.pdb
 *.dat
 *.out
+*.err
 *.log
 *tags
 *tags\ 2
@@ -54,4 +55,7 @@ OUTPUT
 !/sample_inputs/**/RESTART/.gitkeep
 /sample_inputs/**/RESTARTS/**
 !/sample_inputs/**/RESTARTS/.gitkeep
-profile-runs/**
+profile-runs/**.env
+unit_tests/src/gtest.sh
+
+/unit_tests/generate_multi_unit_test_gtest.sh

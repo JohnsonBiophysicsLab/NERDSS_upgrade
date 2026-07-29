@@ -5,6 +5,19 @@ import anthropic
 from dotenv import load_dotenv
 load_dotenv()
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+INCLUDE_DIR = REPO_ROOT / "include"
+TEST_SRC_DIR = REPO_ROOT / "unit_tests" / "src"
+
+# json.hpp is the vendored nlohmann/json single-header (967 KB of the 1.25 MB in
+# include/). It contributes nothing to understanding NERDSS APIs, so it is left
+# out of the context prefix.
+EXCLUDED_HEADERS = {"json.hpp"}
+
+# Existing hand-checked tests used as style references: one class-based, one
+# free-function, matching the mix of targets in todo_files.txt.
+EXAMPLE_TESTS = ["test_class_Coord.cpp", "test_reflect_traj_check_span.cpp"]
+
 SYSTEM_PROMPT = """\
 You are an expert C++ developer. When given a .cpp source file, write a standalone \
 unit test for it that includes verbose console output of what function in which source file \
@@ -25,47 +38,171 @@ is being tested and what the tests are actually doing.
 - Return ONLY the C++ source code, no explanation, and do not print any interactive chat.
 - Follow the google style guide. """
 
-def generate_unit_test(cpp_path: str) -> str:
-    with open(cpp_path) as f:
-        source = f.read()
+BUILD_CONVENTIONS = """\
+# How these tests are built
 
-    client = anthropic.Anthropic()
+Generated tests live in `unit_tests/src/` and are built with `make unittest` from the
+repository root. Constraints that follow from that build:
 
-    response = client.messages.create(
-        model="claude-opus-4-8",
-        max_tokens=16384,
+- The compiler standard is **C++17** (`CXXFLAGS = -std=c++17` in the Makefile). Do not use
+  language or library features newer than C++17.
+- `include/` is on the include path, so project headers are included relative to it:
+  `#include "classes/class_Vector.hpp"`, `#include "boundary_conditions/reflect_functions.hpp"`.
+  Never use a path relative to the test file (no `../include/...`) and never use a bare
+  `#include "class_Vector.hpp"`.
+- gtest comes from `pkg-config --cflags/--libs gtest`, so `#include <gtest/gtest.h>` is correct.
+- GSL is linked into the test binary, so `<gsl/gsl_rng.h>`, `<gsl/gsl_matrix.h>`,
+  `<gsl/gsl_sf_bessel.h>` and friends are available when the code under test needs them.
+- `unit_tests/src/gtest_main.cpp` already provides `main()` **and defines these globals**, which
+  other translation units declare `extern`:
+
+      gsl_rng* r = nullptr;
+      unsigned long totMatches = 0;
+
+  Your file must not define `main`, and must not define `r` or `totMatches` — a duplicate
+  definition is a link error for the entire suite. Declare them `extern` if you need them.
+- Every generated file is linked into one binary (`unit_tests/bin/gtest_main`), so all
+  free function names in your file must be unique across the suite. Prefix them with something
+  derived from the file under test.
+
+# NERDSS headers
+
+The complete set of first-party headers from `include/` follows. Use them as the authoritative
+source for type definitions, function signatures, default arguments, and struct members — do not
+guess at an API that is spelled out below. (The vendored `include/json.hpp` is omitted.)
+"""
+
+EXAMPLES_PREAMBLE = """\
+# Reference style
+
+Two existing tests from `unit_tests/src/` are shown below. Match their structure, comment
+density, and console-output style. They are references for form only — do not copy their
+assertions or reuse their test function names.
+"""
+
+
+def collect_headers() -> str:
+    """Concatenate every first-party header into one labelled block.
+
+    Sorted deliberately: rglob order is filesystem-dependent, and any reordering
+    changes the bytes of the cached prefix and invalidates it.
+    """
+    files = sorted(INCLUDE_DIR.rglob("*.hpp")) + sorted(INCLUDE_DIR.rglob("*.h"))
+    return "\n\n".join(
+        f"// ===== include/{h.relative_to(INCLUDE_DIR)} =====\n{h.read_text()}"
+        for h in files
+        if h.name not in EXCLUDED_HEADERS
+    )
+
+
+def collect_examples() -> str:
+    """Concatenate the reference tests into one labelled block."""
+    return EXAMPLES_PREAMBLE + "\n\n".join(
+        f"// ===== unit_tests/src/{name} =====\n{(TEST_SRC_DIR / name).read_text()}"
+        for name in EXAMPLE_TESTS
+    )
+
+
+def build_system_blocks() -> list:
+    """Assemble the cached context prefix.
+
+    Ordering is stable -> volatile: these four blocks are byte-identical on every
+    request, and the per-file source goes in the user turn after them. The single
+    cache_control breakpoint on the last block therefore covers all four (render
+    order is tools -> system -> messages). Nothing in here may vary per file --
+    no timestamps, no interpolated paths -- or the cache never gets read.
+    """
+    return [
+        {"type": "text", "text": SYSTEM_PROMPT},
+        {"type": "text", "text": BUILD_CONVENTIONS},
+        {"type": "text", "text": collect_headers()},
+        {"type": "text", "text": collect_examples(), "cache_control": {"type": "ephemeral","ttl":"1h"}},
+    ]
+
+
+def generate_unit_test(client, system_blocks: list, cpp_path: Path) -> str:
+    source = cpp_path.read_text()
+    rel_path = cpp_path.relative_to(REPO_ROOT)
+
+    # Streamed because thinking is on by default on Opus 5 and max_tokens caps
+    # thinking plus output together -- a small non-streaming budget truncates the
+    # generated file mid-source.
+    count = client.messages.count_tokens(model="claude-opus-5", system=system_blocks,
+                             messages=[{"role": "user", "content": "x"}]).input_tokens
+    print(f"  input tokens: {count}")
+    with client.messages.stream(
+        model="claude-opus-5",
+        max_tokens=32000,
         thinking={"type": "adaptive"},
-        system=SYSTEM_PROMPT,
+        output_config={"effort": "high"},
+        system=system_blocks,
         messages=[
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"Write a unit test for the file named {cpp_path} with the following content:\n\n```cpp\n{source}\n```",
-                        "cache_control": {"type": "ephemeral"},
-                    }
-                ],
+                "content": f"Write a unit test for {rel_path} with the following content:"
+                           f"\n\n```cpp\n{source}\n```",
             }
         ],
+    ) as stream:
+        response = stream.get_final_message()
+
+    usage = response.usage
+    print(
+        f"  cache write={usage.cache_creation_input_tokens} "
+        f"read={usage.cache_read_input_tokens} "
+        f"uncached={usage.input_tokens} out={usage.output_tokens}"
     )
 
     return next(block.text for block in response.content if block.type == "text")
 
 
-if __name__ == "__main__":
+def read_target_list(list_path: Path) -> list:
+    """Read a file list, skipping blank lines and comments.
 
-    if len(sys.argv) > 1:
-        file_name = sys.argv[1]
-    else:
-        print("You must provide a list of source files to be unit tested.")
+    todo_files.txt has 22 blank lines; each one used to become the path "."
+    and crash the run with IsADirectoryError.
+    """
+    targets = []
+    for line in list_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        targets.append(REPO_ROOT / line.lstrip("./"))
+    return targets
+
+
+if __name__ == "__main__":
+    argv = sys.argv[1:]
+    force = "--force" in argv
+    positional = [arg for arg in argv if not arg.startswith("-")]
+
+    if not positional:
+        print("Usage: generate_multi_unit_test_gtest.py <file-list> [--force]")
+        print("  <file-list>  text file listing source paths, e.g. todo_files.txt")
+        print("  --force      regenerate tests that already exist")
         quit()
-#    print(f"Generating unit test for: {path}\n")
-    with open(file_name, "r") as f:
-        for line in f:
-            path = "." + line.strip()
-            print("Opened file " + path)
-            src_path = Path(path)
-            out_path = Path("src") / ("test_" + src_path.name)
-            out_path.write_text(generate_unit_test(path))
-            print(f"Unit test written to: {out_path}")
+
+    targets = read_target_list(Path(positional[0]))
+    print(f"Read {len(targets)} source files to test.\n")
+
+    print("Assembling repository context (this is cached across files)...")
+    system_blocks = build_system_blocks()
+    context_chars = sum(len(block["text"]) for block in system_blocks)
+    print(f"Context prefix: {context_chars:,} characters\n")
+
+    client = anthropic.Anthropic()
+
+    for src_path in targets:
+        out_path = TEST_SRC_DIR / ("test_" + src_path.name)
+
+        if not src_path.is_file():
+            print(f"Skipping {src_path}: not found")
+            continue
+        if out_path.exists() and not force:
+            print(f"Skipping {src_path.relative_to(REPO_ROOT)}: "
+                  f"{out_path.name} already exists (use --force to regenerate)")
+            continue
+
+        print(f"Generating test for {src_path.relative_to(REPO_ROOT)}")
+        out_path.write_text(generate_unit_test(client, system_blocks, src_path))
+        print(f"  written to {out_path.relative_to(REPO_ROOT)}")
