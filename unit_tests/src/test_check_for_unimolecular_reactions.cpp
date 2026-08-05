@@ -68,10 +68,12 @@ namespace {
 void cfur_init_rng()
 {
     if (r == nullptr) {
-        gsl_rng_env_setup();
-        r = gsl_rng_alloc(gsl_rng_mt19937);
-        gsl_rng_set(r, 20240501u);
-        std::cerr << "  [setup] allocated global GSL RNG (mt19937, seed 20240501)\n";
+          // random generator
+        const gsl_rng_type *T;
+        T = gsl_rng_default;
+        r = gsl_rng_alloc(T);
+        gsl_rng_set(r, 42);
+        std::cerr << "  [setup] allocated global GSL RNG (seed 42)\n";
     }
 }
 
@@ -102,11 +104,11 @@ void cfur_reset_statics(int numMolecules)
 {
     Molecule::numberOfMolecules = numMolecules;
     Molecule::emptyMolList.clear();
-    Molecule::mapIdToIndex.clear();
+    // Molecule::mapIdToIndex.clear();
 
     Complex::numberOfComplexes = numMolecules;
     Complex::emptyComList.clear();
-    Complex::mapIdToIndex.clear();
+    // Complex::mapIdToIndex.clear();
     Complex::currNumberComTypes = 1;
     Complex::currNumberMolTypes = 1;
     Complex::obs.assign(8, 0);
@@ -345,6 +347,7 @@ void cfur_add_state_change(CfurSystem& sys, double fwdRate, double backRate)
     fwd.intProductList = std::vector<int> { 1 };
     fwd.rateList.push_back(RxnBase::RateState());
     fwd.rateList[0].rate = fwdRate;
+    fwd.rateList[0].otherIfaceLists.resize(1);
     fwd.isObserved = false;
     sys.forwardRxns.push_back(fwd);
 
@@ -362,6 +365,7 @@ void cfur_add_state_change(CfurSystem& sys, double fwdRate, double backRate)
     back.intProductList = std::vector<int> { 0 };
     back.rateList.push_back(RxnBase::RateState());
     back.rateList[0].rate = backRate;
+    back.rateList[0].otherIfaceLists.resize(1);
     back.isObserved = false;
     sys.backRxns.push_back(back);
 }

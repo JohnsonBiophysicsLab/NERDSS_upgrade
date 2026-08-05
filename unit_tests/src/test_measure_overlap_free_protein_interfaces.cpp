@@ -141,8 +141,10 @@ std::vector<ForwardRxn> mofpi_make_forward_rxns(double bindRadius)
     rxn.intReactantList = { kMofpiAbsIfaceA, kMofpiAbsIfaceB };
     rxn.intProductList = { 2, 3 };
 
-    // A single rate with no ancillary ("other") interface requirements.
-    rxn.rateList.emplace_back(1.0, std::vector<std::vector<RxnIface>> {});
+    // A single rate with no ancillary ("other") interface requirements. hasIntangibles()
+    // indexes otherIfaceLists[0] and [1] unconditionally (one entry per reactant), so it
+    // must have two (possibly empty) inner lists rather than being completely empty.
+    rxn.rateList.emplace_back(1.0, std::vector<std::vector<RxnIface>> { {}, {} });
 
     std::vector<ForwardRxn> forwardRxns;
     forwardRxns.push_back(rxn);

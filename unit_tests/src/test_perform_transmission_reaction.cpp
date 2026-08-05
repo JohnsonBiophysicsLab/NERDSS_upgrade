@@ -88,13 +88,13 @@ void ptrxn_reset_statics()
     Molecule::numberOfMolecules = 0;
     Molecule::emptyMolList.clear();
     Molecule::maxID = 0;
-    Molecule::mapIdToIndex.clear();
+    // Molecule::mapIdToIndex.clear();
 
     Complex::numberOfComplexes = 0;
     Complex::emptyComList.clear();
     Complex::obs.clear();
     Complex::maxID = 0;
-    Complex::mapIdToIndex.clear();
+    // Complex::mapIdToIndex.clear();
     Complex::currNumberMolTypes = 2;
     Complex::currNumberComTypes = 2;
 

@@ -183,9 +183,11 @@ void test_ddm_allocation_and_sizes()
     std::cerr << "\n[TEST] test_ddm_allocation_and_sizes\n"
               << "  Source file:   src/reactions/create_DDMatrices.cpp\n"
               << "  Function:      create_DDMatrices()\n"
-              << "  Scenario:      call with three NULL pointers and a small,\n"
+              << "  Scenario:      pre-allocate the three tables the way the real caller\n"
+              << "                 does (see determine_2D_bimolecular_reaction_probability.cpp),\n"
+              << "                 sized via size_lookup(), then fill them for a small,\n"
               << "                 fast-to-build radial range.\n"
-              << "  Pass criteria: all pointers become non-NULL, are distinct,\n"
+              << "  Pass criteria: all pointers stay non-NULL, are distinct,\n"
               << "                 and hold at least size_lookup() elements.\n";
 
     DdmGslErrorGuard errGuard; // keep GSL from aborting the whole suite
@@ -207,18 +209,21 @@ void test_ddm_allocation_and_sizes()
               << "  RStepSize (recomputed here) = " << RStepSize
               << ", size_lookup() = " << expectedLen << '\n';
 
-    // Deliberately start from NULL to prove the function performs allocation.
-    gsl_matrix* survMatrix = nullptr;
-    gsl_matrix* normMatrix = nullptr;
-    gsl_matrix* pirMatrix = nullptr;
+    // create_DDMatrices() does not allocate its output matrices -- it only fills
+    // in whatever gsl_matrix the caller already allocated (see
+    // determine_2D_bimolecular_reaction_probability.cpp). Pre-allocate here the
+    // same way the real caller does.
+    gsl_matrix* survMatrix = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* normMatrix = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* pirMatrix = gsl_matrix_alloc(expectedLen, expectedLen);
 
     std::cerr << "  Calling create_DDMatrices()...\n";
     create_DDMatrices(survMatrix, normMatrix, pirMatrix, bindRadius, Dtot, comRMax, ktemp, params);
 
-    // 1. Every table must have been allocated.
-    EXPECT_NE(survMatrix, nullptr) << "survMatrix should be allocated by create_DDMatrices";
-    EXPECT_NE(normMatrix, nullptr) << "normMatrix should be allocated by create_DDMatrices";
-    EXPECT_NE(pirMatrix, nullptr) << "pirMatrix should be allocated by create_DDMatrices";
+    // 1. Every table must still be a valid allocation.
+    EXPECT_NE(survMatrix, nullptr) << "survMatrix should be a valid allocation";
+    EXPECT_NE(normMatrix, nullptr) << "normMatrix should be a valid allocation";
+    EXPECT_NE(pirMatrix, nullptr) << "pirMatrix should be a valid allocation";
 
     // 2. They must be three separate allocations (no aliasing of one table).
     EXPECT_NE(survMatrix, normMatrix) << "surv and norm matrices must be distinct objects";
@@ -271,10 +276,13 @@ void test_ddm_entries_are_finite()
     const double comRMax = bindRadius + 0.2;
     const double ktemp = 5.0;
     Parameters params = ddm_make_params(0.1);
+    const size_t expectedLen = size_lookup(bindRadius, Dtot, params, comRMax);
 
-    gsl_matrix* survMatrix = nullptr;
-    gsl_matrix* normMatrix = nullptr;
-    gsl_matrix* pirMatrix = nullptr;
+    // create_DDMatrices() only fills a pre-allocated gsl_matrix; it does not
+    // allocate one itself. Size the tables the way the real caller does.
+    gsl_matrix* survMatrix = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* normMatrix = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* pirMatrix = gsl_matrix_alloc(expectedLen, expectedLen);
 
     std::cerr << "  Calling create_DDMatrices() with Dtot = " << Dtot
               << ", ka = " << ktemp << "...\n";
@@ -320,13 +328,16 @@ void test_ddm_is_deterministic()
     const double comRMax = bindRadius + 0.15;
     const double ktemp = 8.0;
     Parameters params = ddm_make_params(0.1);
+    const size_t expectedLen = size_lookup(bindRadius, Dtot, params, comRMax);
 
-    gsl_matrix* surv1 = nullptr;
-    gsl_matrix* norm1 = nullptr;
-    gsl_matrix* pir1 = nullptr;
-    gsl_matrix* surv2 = nullptr;
-    gsl_matrix* norm2 = nullptr;
-    gsl_matrix* pir2 = nullptr;
+    // create_DDMatrices() only fills a pre-allocated gsl_matrix; it does not
+    // allocate one itself. Size the tables the way the real caller does.
+    gsl_matrix* surv1 = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* norm1 = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* pir1 = gsl_matrix_alloc(expectedLen, expectedLen);
+    gsl_matrix* surv2 = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* norm2 = gsl_matrix_alloc(2, expectedLen);
+    gsl_matrix* pir2 = gsl_matrix_alloc(expectedLen, expectedLen);
 
     std::cerr << "  First call to create_DDMatrices()...\n";
     create_DDMatrices(surv1, norm1, pir1, bindRadius, Dtot, comRMax, ktemp, params);
@@ -398,12 +409,14 @@ void test_ddm_larger_rmax_grows_tables()
     EXPECT_GT(lenLarge, lenSmall)
         << "size_lookup() should grow with comRMax (sanity check on the inputs)";
 
-    gsl_matrix* survSmall = nullptr;
-    gsl_matrix* normSmall = nullptr;
-    gsl_matrix* pirSmall = nullptr;
-    gsl_matrix* survLarge = nullptr;
-    gsl_matrix* normLarge = nullptr;
-    gsl_matrix* pirLarge = nullptr;
+    // create_DDMatrices() only fills a pre-allocated gsl_matrix; it does not
+    // allocate one itself. Size the tables the way the real caller does.
+    gsl_matrix* survSmall = gsl_matrix_alloc(2, lenSmall);
+    gsl_matrix* normSmall = gsl_matrix_alloc(2, lenSmall);
+    gsl_matrix* pirSmall = gsl_matrix_alloc(lenSmall, lenSmall);
+    gsl_matrix* survLarge = gsl_matrix_alloc(2, lenLarge);
+    gsl_matrix* normLarge = gsl_matrix_alloc(2, lenLarge);
+    gsl_matrix* pirLarge = gsl_matrix_alloc(lenLarge, lenLarge);
 
     std::cerr << "  Building tables for the small radial range...\n";
     create_DDMatrices(survSmall, normSmall, pirSmall, bindRadius, Dtot, smallRMax, ktemp, params);
@@ -474,9 +487,12 @@ void test_ddm_multiple_parameter_sets()
         std::cerr << "  --- case: bindRadius = " << c.bindRadius << ", Dtot = " << c.Dtot
                   << ", ka = " << c.ka << ", comRMax = " << comRMax << '\n';
 
-        gsl_matrix* surv = nullptr;
-        gsl_matrix* norm = nullptr;
-        gsl_matrix* pir = nullptr;
+        // create_DDMatrices() only fills a pre-allocated gsl_matrix; it does not
+        // allocate one itself. Size the tables the way the real caller does.
+        const size_t expectedLen = size_lookup(c.bindRadius, c.Dtot, params, comRMax);
+        gsl_matrix* surv = gsl_matrix_alloc(2, expectedLen);
+        gsl_matrix* norm = gsl_matrix_alloc(2, expectedLen);
+        gsl_matrix* pir = gsl_matrix_alloc(expectedLen, expectedLen);
 
         create_DDMatrices(surv, norm, pir, c.bindRadius, c.Dtot, comRMax, c.ka, params);
 

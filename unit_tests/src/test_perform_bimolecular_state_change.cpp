@@ -199,12 +199,16 @@ void pbsc_build_reactions(std::vector<ForwardRxn>& forwardRxns, std::vector<Back
     fwd.bindRadius = 1.0;
     fwd.rxnLabel = "pbscForward";
     fwd.productName = "A(a~P)";
-    // element 0 is always the state-changing interface, element 1 the facilitator
-    fwd.reactantListNew = { reactStateChange, facilitator };
-    fwd.productListNew = { prodStateChange, facilitator };
+    // element 0 is always the facilitator, element 1 the state-changing interface
+    // (see ParsedRxn::determine_reactants_products, which always inserts the
+    // facilitator at the front of both lists for biMolStateChange reactions --
+    // perform_bimolecular_state_change_box/_sphere read productListNew[1] as
+    // the state-change product).
+    fwd.reactantListNew = { facilitator, reactStateChange };
+    fwd.productListNew = { facilitator, prodStateChange };
     fwd.stateChangeIface = std::make_pair(reactStateChange, prodStateChange);
-    fwd.intReactantList = { kPbscAbsStateU, kPbscAbsIfaceB };
-    fwd.intProductList = { kPbscAbsStateP, kPbscAbsIfaceB };
+    fwd.intReactantList = { kPbscAbsIfaceB, kPbscAbsStateU };
+    fwd.intProductList = { kPbscAbsIfaceB, kPbscAbsStateP };
     fwd.rateList = { oneRate };
     forwardRxns.push_back(fwd);
 
@@ -219,11 +223,11 @@ void pbsc_build_reactions(std::vector<ForwardRxn>& forwardRxns, std::vector<Back
     back.isOnMem = false;
     back.isSymmetric = false;
     back.rxnLabel = "pbscBack";
-    back.reactantListNew = { prodStateChange, facilitator };
-    back.productListNew = { reactStateChange, facilitator };
+    back.reactantListNew = { facilitator, prodStateChange };
+    back.productListNew = { facilitator, reactStateChange };
     back.stateChangeIface = std::make_pair(prodStateChange, reactStateChange);
-    back.intReactantList = { kPbscAbsStateP, kPbscAbsIfaceB };
-    back.intProductList = { kPbscAbsStateU, kPbscAbsIfaceB };
+    back.intReactantList = { kPbscAbsIfaceB, kPbscAbsStateP };
+    back.intProductList = { kPbscAbsIfaceB, kPbscAbsStateU };
     back.rateList = { oneRate };
     backRxns.push_back(back);
 }

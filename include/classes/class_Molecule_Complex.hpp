@@ -285,7 +285,7 @@ struct Molecule {
     // MPI static variable:
     static int maxID;  //!< the number of the first empty ID for a complex atparticular rank
     // Declaring mapIdToIndex to be able to translate ID to index relatively fast:
-    static std::unordered_map<size_t, size_t> mapIdToIndex;
+    // static std::unordered_map<size_t, size_t> mapIdToIndex;
 
     void write_crd_file(std::ofstream& os) const;
     void write_crd_file_cout() const;
@@ -490,7 +490,7 @@ public:
     static int maxID;  //!< the number of the first empty ID for a complex at particular rank
 
     // Declaring mapIdToIndex to be able to translate ID to index relatively fast:
-    static std::unordered_map<size_t, size_t> mapIdToIndex;
+    // static std::unordered_map<size_t, size_t> mapIdToIndex;
 
     friend std::ostream& operator<<(std::ostream& os, const Molecule& mol);
 
