@@ -350,10 +350,6 @@ void wobs_test_time_field_formatting()
     {
         const std::string output = wobs_run_once(0.125, obs);
         std::cerr << "  t = 0.125 -> \"" << output << "\"\n";
-        EXPECT_EQ(output, wobs_format_double(0.125) + ",1")
-                     .operator bool()
-            ? void()
-            : void(); // (comparison performed below with a clearer message)
         EXPECT_EQ(output, wobs_format_double(0.125) + ",1\n")
             << "Fractional times must use default stream formatting";
     }

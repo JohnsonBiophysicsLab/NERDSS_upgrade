@@ -59,3 +59,4 @@ profile-runs/**.env
 unit_tests/src/gtest.sh
 
 /unit_tests/generate_multi_unit_test_gtest.sh
+profile-runs/*

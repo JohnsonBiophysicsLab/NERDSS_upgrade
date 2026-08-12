@@ -113,8 +113,8 @@ void perform_implicitlipid_state_change_box(int stateChangeIface, int facilitato
     if (isOnMembrane == false) {
         transitionToSurface = true;
     }
-    Molecule memProtein;
-
+    // assigned to stateChangeMol because of segfaulting in unit test
+    Molecule memProtein = stateChangeMol;
     int slowPro = stateChangeMol.index;
 
     double tol = 1E-14;
