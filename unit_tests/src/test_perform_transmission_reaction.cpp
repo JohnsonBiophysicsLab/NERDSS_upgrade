@@ -200,7 +200,10 @@ void ptrxn_build_world(PtrxnWorld& w, int numOutsideMolecules)
     // initialized exactly once.
     if (r == nullptr) {
         std::cerr << "    (initializing GSL RNG for the transmission test)\n";
-        srand_gsl(42);
+         const gsl_rng_type *T;
+         T = gsl_rng_default;
+         r = gsl_rng_alloc(T);
+         gsl_rng_set(r, 42);;
     }
 
     ptrxn_reset_statics();

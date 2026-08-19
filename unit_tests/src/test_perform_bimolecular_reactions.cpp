@@ -59,7 +59,10 @@ namespace {
 void pbr_ensure_rng() {
   if (r == nullptr) {
     std::cerr << "  [setup] GSL RNG was null -> initializing with srand_gsl(1)\n";
-    srand_gsl(1);
+     const gsl_rng_type *T;
+         T = gsl_rng_default;
+         r = gsl_rng_alloc(T);
+         gsl_rng_set(r, 42);
   }
 }
 

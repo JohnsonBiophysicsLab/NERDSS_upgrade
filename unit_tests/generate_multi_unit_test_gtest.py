@@ -7,6 +7,7 @@ load_dotenv()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INCLUDE_DIR = REPO_ROOT / "include"
+SRC_CLASSES_DIR = REPO_ROOT / "src" / "classes"
 TEST_SRC_DIR = REPO_ROOT / "unit_tests" / "src"
 
 # json.hpp is the vendored nlohmann/json single-header (967 KB of the 1.25 MB in
@@ -25,6 +26,7 @@ is being tested and what the tests are actually doing.
 
 - Use external test framework gtest.
 - Use the EXPECT_* assertions provided by googletests and print useful information to stderr.
+- Do not call srand_gsl(); to initialise the random number generator use this instead "const gsl_rng_type *T; T = gsl_rng_default;r = gsl_rng_alloc(T);gsl_rng_set(r, 42);"
 - Avoid fatal errors so that all tests run even if some fail.
 - Be sure to test all functions in a given file.
 - Group related assertions into named void test_*() functions.
@@ -72,6 +74,27 @@ source for type definitions, function signatures, default arguments, and struct 
 guess at an API that is spelled out below. (The vendored `include/json.hpp` is omitted.)
 """
 
+CLASS_IMPLS_PREAMBLE = """\
+# NERDSS class implementations
+
+The definitions for every type declared in `include/classes/` follow. The headers above give you the
+signatures; these give you the behavior. Use both to decide what to assert:
+
+- Assert against the behavior the code actually has, including exact rounding and comparison semantics.
+  For example, `operator==` on `Coord` does not compare `x`, `y`, `z` directly -- it compares them after
+  `roundv`, which truncates to 4 decimal places with a sign-dependent rule. Picking your own epsilon
+  instead of reading the implementation produces an assertion that is wrong about the code.
+- Do not write a test that reaches an `exit()` or `abort()` path. Several constructors bail out that way
+  on bad input (`Coord(std::vector<double>)` calls `exit(1)` when handed more than three values), and
+  that kills the entire gtest binary, not just the one case. If a function bails out on bad input, say so
+  in a comment rather than triggering it.
+- Constructors and member functions frequently index into vectors without bounds checks and read members
+  the caller was expected to have filled in first. Read the implementation for those preconditions and
+  fully initialize every object your test builds -- an under-initialized `Molecule`, `Complex`,
+  `Parameters` or `MolTemplate` segfaults the whole suite.
+
+"""
+
 EXAMPLES_PREAMBLE = """\
 # Reference style
 
@@ -95,6 +118,19 @@ def collect_headers() -> str:
     )
 
 
+def collect_class_impls() -> str:
+    """Concatenate every src/classes implementation into one labelled block.
+
+    Sorted for the same reason collect_headers() is: glob order is
+    filesystem-dependent, and any reordering changes the bytes of the cached
+    prefix and invalidates it.
+    """
+    return CLASS_IMPLS_PREAMBLE + "\n\n".join(
+        f"// ===== src/classes/{c.name} =====\n{c.read_text()}"
+        for c in sorted(SRC_CLASSES_DIR.glob("*.cpp"))
+    )
+
+
 def collect_examples() -> str:
     """Concatenate the reference tests into one labelled block."""
     return EXAMPLES_PREAMBLE + "\n\n".join(
@@ -106,16 +142,23 @@ def collect_examples() -> str:
 def build_system_blocks() -> list:
     """Assemble the cached context prefix.
 
-    Ordering is stable -> volatile: these four blocks are byte-identical on every
-    request, and the per-file source goes in the user turn after them. The single
-    cache_control breakpoint on the last block therefore covers all four (render
-    order is tools -> system -> messages). Nothing in here may vary per file --
-    no timestamps, no interpolated paths -- or the cache never gets read.
+    Ordering is stable -> volatile: these five blocks are byte-identical on every
+    request, and the per-file source goes in the user turn after them. Nothing in
+    here may vary per file -- no timestamps, no interpolated paths -- or the cache
+    never gets read (render order is tools -> system -> messages).
+
+    Two breakpoints, out of the four the API allows. The first one ends the
+    expensive headers-plus-implementations run (~130k tokens), so editing
+    EXAMPLE_TESTS -- the block most likely to change while tuning the prompt --
+    only invalidates the last ~7k tokens. Editing SYSTEM_PROMPT or
+    BUILD_CONVENTIONS still invalidates everything, since caching is a prefix
+    match and those have to come first.
     """
     return [
         {"type": "text", "text": SYSTEM_PROMPT},
         {"type": "text", "text": BUILD_CONVENTIONS},
         {"type": "text", "text": collect_headers()},
+        {"type": "text", "text": collect_class_impls(), "cache_control": {"type": "ephemeral","ttl":"1h"}},
         {"type": "text", "text": collect_examples(), "cache_control": {"type": "ephemeral","ttl":"1h"}},
     ]
 
@@ -123,6 +166,13 @@ def build_system_blocks() -> list:
 def generate_unit_test(client, system_blocks: list, cpp_path: Path) -> str:
     source = cpp_path.read_text()
     rel_path = cpp_path.relative_to(REPO_ROOT)
+
+    # A src/classes target is already in the cached implementations block. It is
+    # repeated here anyway -- dropping it per-file would make the prefix vary and
+    # kill the cache -- so say why it appears twice.
+    note = ("\n\n(This file also appears in the class implementations block above; "
+            "it is repeated here as the target.)"
+            if cpp_path.parent == SRC_CLASSES_DIR else "")
 
     # Streamed because thinking is on by default on Opus 5 and max_tokens caps
     # thinking plus output together -- a small non-streaming budget truncates the
@@ -132,7 +182,7 @@ def generate_unit_test(client, system_blocks: list, cpp_path: Path) -> str:
     print(f"  input tokens: {count}")
     with client.messages.stream(
         model="claude-opus-5",
-        max_tokens=32000,
+        max_tokens=100000,
         thinking={"type": "adaptive"},
         output_config={"effort": "high"},
         system=system_blocks,
@@ -140,7 +190,7 @@ def generate_unit_test(client, system_blocks: list, cpp_path: Path) -> str:
             {
                 "role": "user",
                 "content": f"Write a unit test for {rel_path} with the following content:"
-                           f"\n\n```cpp\n{source}\n```",
+                           f"\n\n```cpp\n{source}\n```{note}",
             }
         ],
     ) as stream:

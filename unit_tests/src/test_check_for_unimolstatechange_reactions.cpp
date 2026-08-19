@@ -96,7 +96,10 @@ void cfusc_ensure_rng()
 {
     if (r == nullptr) {
         std::cerr << "  [setup] global GSL rng was null -> calling srand_gsl(12345)\n";
-        srand_gsl(12345);
+         const gsl_rng_type *T;
+         T = gsl_rng_default;
+         r = gsl_rng_alloc(T);
+         gsl_rng_set(r, 42);
     }
 }
 

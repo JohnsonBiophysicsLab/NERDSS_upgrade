@@ -67,7 +67,10 @@ void msipr_ensure_rng()
 {
     if (r == nullptr) {
         std::cerr << "  (global GSL RNG was null -> initialising with seed 1)\n";
-        srand_gsl(1);
+         const gsl_rng_type *T;
+         T = gsl_rng_default;
+         r = gsl_rng_alloc(T);
+         gsl_rng_set(r, 42);
     }
 }
 

@@ -146,7 +146,10 @@ void imatr_init_rng_if_needed()
 {
     if (r == nullptr) {
         std::cerr << "  (global gsl_rng* r was null -> calling srand_gsl(1))\n";
-        srand_gsl(1);
+         const gsl_rng_type *T;
+         T = gsl_rng_default;
+         r = gsl_rng_alloc(T);
+         gsl_rng_set(r, 42);
     }
 }
 
