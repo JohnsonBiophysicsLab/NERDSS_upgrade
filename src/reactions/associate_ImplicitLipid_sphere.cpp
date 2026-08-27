@@ -88,16 +88,19 @@ void associate_implicitlipid_sphere(
         // std::cout << std::setw(8) << std::setfill('-') << ' ' << std::endl
         //           << "THETA 1" << std::endl
         //           << std::setw(8) << ' ' << std::setfill(' ') << std::endl;
-        theta_rotation(reactIface1, reactIface2, reactMol1, reactMol2,
-            currRxn.assocAngles.theta1, reactCom1, reactCom2, moleculeList);
+        if (!std::isnan(currRxn.assocAngles.theta1)) {
+            theta_rotation(reactIface1, reactIface2, reactMol1, reactMol2,
+                currRxn.assocAngles.theta1, reactCom1, reactCom2, moleculeList);
+        }
         // std::cout << std::setw(30) << std::setfill('-') << ' '
         //           << std::setfill(' ') << std::endl;
         // std::cout << "THETA 2" << std::endl
         //           << std::setw(8) << std::setfill('-') << ' ' << std::setfill(' ')
         //           << std::endl;
-        theta_rotation(reactIface2, reactIface1, reactMol2, reactMol1,
+        if (!std::isnan(currRxn.assocAngles.theta2)) {
+            theta_rotation(reactIface2, reactIface1, reactMol2, reactMol1,
             currRxn.assocAngles.theta2, reactCom2, reactCom1, moleculeList);
-
+        }
         // OMEGA
         // if protein has theta M_PI, uses protein norm instead of com_iface vector
         // std::cout << std::setw(6) << std::setfill('-') << ' ' << std::endl

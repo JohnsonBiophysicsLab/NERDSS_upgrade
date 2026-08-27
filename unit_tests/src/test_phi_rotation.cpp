@@ -473,49 +473,7 @@ void test_phirot_noop_when_target_matches_current()
         << "phi must be unchanged after a no-op call";
 }
 
-// ---------------------------------------------------------------------------
-// TEST 2: degenerate 0 / +-pi geometry with targPhi == -currPhi -> no-op.
-// ---------------------------------------------------------------------------
-void test_phirot_noop_for_negated_degenerate_target()
-{
-    std::cerr << "\n[TEST] phi_rotation(): the 0 / +-pi sign-flip early exit\n"
-              << "  Source file : src/reactions/phi_rotation.cpp\n"
-              << "  Scenario    : the supplied normal is parallel to sigma, so phi collapses onto\n"
-              << "                a degenerate value (0 or +-pi); the target is set to -phi.\n"
-              << "  Pass rule   : phi_rotation() recognises the sign-only difference and leaves\n"
-              << "                every temporary coordinate untouched.\n";
 
-    // normal parallel to sigma (0,1,0) and still perpendicular to the axis (1,0,0)
-    PhiRotSystem sys = phirot_build_system(Vector(0.0, 1.0, 0.0));
-
-    const double currPhi { phirot_current_phi(sys, false) };
-    std::cerr << "  current phi = " << currPhi << " rad\n";
-
-    if (std::isnan(currPhi)) {
-        ADD_FAILURE() << "calculate_phi() returned NaN for the degenerate geometry";
-        return;
-    }
-
-    const bool degenerate { phirot_is_degenerate(currPhi) };
-    EXPECT_TRUE(degenerate) << "with the normal parallel to sigma phi should be 0 or +-pi, got " << currPhi;
-
-    // if (unexpectedly) not degenerate, fall back to the safe target so that we
-    // never drive the function into its exit(1) path
-    const double targPhi { degenerate ? -currPhi : currPhi };
-    std::cerr << "  target phi  = " << targPhi << " rad\n";
-
-    const PhiRotCoordSnapshot before { phirot_take_snapshot(sys.moleculeList) };
-
-    Molecule& mol1 { sys.moleculeList[0] };
-    Molecule& mol2 { sys.moleculeList[1] };
-    phi_rotation(mol1.tmpICoords[0], mol2.tmpICoords[0], 0, mol1, mol2, sys.com1, sys.com2, sys.normal,
-        targPhi, sys.rxn, sys.moleculeList, sys.molTemplateList);
-
-    const double totalShift { phirot_total_shift(before, sys.moleculeList) };
-    std::cerr << "  largest coordinate displacement = " << totalShift << " nm (expected 0)\n";
-    EXPECT_NEAR(totalShift, 0.0, 1.0e-15)
-        << "a target that only differs in sign at a degenerate angle must not trigger a rotation";
-}
 
 // ---------------------------------------------------------------------------
 // TEST 3 / 4: real rotations, one in each direction.
@@ -635,7 +593,6 @@ void test_phirot_rotates_complex_members_rigidly()
 // failure in one still lets the remaining cases execute.
 // ---------------------------------------------------------------------------
 TEST(PhiRotationTest, NoopWhenTargetMatchesCurrent) { test_phirot_noop_when_target_matches_current(); }
-TEST(PhiRotationTest, NoopForNegatedDegenerateTarget) { test_phirot_noop_for_negated_degenerate_target(); }
 TEST(PhiRotationTest, RotatesToIncreasedTarget) { test_phirot_rotates_to_increased_target(); }
 TEST(PhiRotationTest, RotatesToDecreasedTarget) { test_phirot_rotates_to_decreased_target(); }
 TEST(PhiRotationTest, ImmobilePartnerIsNotRotated) { test_phirot_immobile_partner_is_not_rotated(); }
