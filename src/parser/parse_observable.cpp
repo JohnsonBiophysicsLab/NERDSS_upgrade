@@ -44,7 +44,10 @@ SpeciesTracker::Observable parse_observable(const std::string& line, const std::
         for (auto& oneMol : molecules) {
             std::pair<std::string, int> tmpMol { oneMol, 0 };
             int tmpI { 1 }; // just so i don't have to make another function
-            parsedMols.emplace_back(parse_molecule_bngl(tmpI, false, tmpMol));
+            // An observable's specie string describes an already-formed complex (like a
+            // reaction's product side), so explicit bond indices (e.g. "e!1") are valid here,
+            // unlike a reactant pattern where only wildcard bonds ("!*") are allowed.
+            parsedMols.emplace_back(parse_molecule_bngl(tmpI, true, tmpMol));
         }
     }
 
