@@ -1,4 +1,3 @@
-```cpp
 /*! \file test_pirr_pfree_ratio_psF_1D.cpp
  *
  * ### Unit tests for src/reactions/pirr_pfree_ratio_psF_1D.cpp
@@ -489,4 +488,3 @@ TEST(PirrPfreeRatioPsF1D, FiniteBindradLargeSeparation) { test_pirr1d_finite_bin
 TEST(PirrPfreeRatioPsF1D, PsPrevScaling) { test_pirr1d_ps_prev_scaling(); }
 TEST(PirrPfreeRatioPsF1D, BranchDiscontinuityAtZeroBindrad) { test_pirr1d_branch_discontinuity_at_zero_bindrad(); }
 TEST(PirrPfreeRatioPsF1D, FinitenessSweep) { test_pirr1d_finiteness_sweep(); }
-```

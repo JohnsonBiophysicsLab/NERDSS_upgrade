@@ -1,4 +1,3 @@
-```cpp
 /*! \file test_generate_coordinates.cpp
  *
  * ### Unit tests for src/system_setup/generate_coordinates.cpp
@@ -978,4 +977,3 @@ TEST(GenerateCoordinatesTest, FixOverlappingOnlyChangedMovesPartner) { gc_test_f
 TEST(GenerateCoordinatesTest, GenerateCoordinatesBuildsSystem) { gc_test_generate_coordinates_builds_system(); }
 TEST(GenerateCoordinatesTest, GenerateCoordinatesEmptySystem) { gc_test_generate_coordinates_empty_system(); }
 TEST(GenerateCoordinatesTest, GenerateCoordinatesAppliesPdb) { gc_test_generate_coordinates_applies_pdb(); }
-```
