@@ -99,7 +99,45 @@ Coord angle_plus(Coord angle1, Coord angle2)
     return sum;
 }
 
+//Claude wrote a new version of find_position_after_association to fix the axis aligned fragility in Yiben's code because it assumed that x was not exactly equal to zero.
+//Claude says other functions in this file have the same axis-aligned fragility, so the test may hit another one next. find_spherical_coords divides by sin(theta), and calculate_inner_coord_coefficients has hard-coded component divisions (e.g. / k.x).
 Coord find_position_after_association(double arc1, Coord Iface1, Coord Iface2, double arc_total, double bindRadius)
+{
+    double R = radius(Iface1);
+    arc1 = std::abs(arc1);
+
+    // unit vectors along Iface1 and Iface2
+    double u1x = Iface1.x / R, u1y = Iface1.y / R, u1z = Iface1.z / R;
+    double R2 = radius(Iface2);
+    double u2x = Iface2.x / R2, u2y = Iface2.y / R2, u2z = Iface2.z / R2;
+
+    // tangent at Iface1 pointing along the great circle toward Iface2
+    double c = u1x * u2x + u1y * u2y + u1z * u2z;
+    double tx = u2x - c * u1x, ty = u2y - c * u1y, tz = u2z - c * u1z;
+    double tmag = sqrt(tx * tx + ty * ty + tz * tz);
+    if (tmag < 1E-12) {
+        std::cout << "WRONG: Iface1 and Iface2 are coincident or antipodal in 'find_position_after_association'...EXIT! " << std::endl;
+        exit(1);
+    }
+    tx /= tmag; ty /= tmag; tz /= tmag;
+
+    // move toward Iface2 if they must come closer, away otherwise
+    double sign = (bindRadius < arc_total) ? 1.0 : -1.0;
+    double ang = arc1 / R;
+    Coord new_position1;
+    new_position1.x = R * (cos(ang) * u1x + sign * sin(ang) * tx);
+    new_position1.y = R * (cos(ang) * u1y + sign * sin(ang) * ty);
+    new_position1.z = R * (cos(ang) * u1z + sign * sin(ang) * tz);
+
+    if (std::isnan(new_position1.x) || std::isnan(new_position1.y) || std::isnan(new_position1.z)) {
+        std::cout << "WRONG: non position is generated in 'find_position_after_association'...EXIT! " << std::endl;
+        exit(1);
+    }
+    return new_position1;
+}
+
+
+Coord find_position_after_association_yiben(double arc1, Coord Iface1, Coord Iface2, double arc_total, double bindRadius)
 {
     double x1 = Iface1.x;
     double y1 = Iface1.y;
