@@ -32,8 +32,14 @@
  *        * flat box  -> the protein is dragged down to the planar membrane
  *                       (z ~ -waterBox.z/2), and
  *        * sphere    -> the protein stays in the hemisphere it started in and is
- *                       pulled radially outwards toward the spherical membrane,
- *                       i.e. it is *not* dragged to the bottom of a flat box.
+ *                       pulled radially outwards until its interface sits on the
+ *                       shell |r| = R, i.e. it is *not* dragged to the bottom of
+ *                       a flat box.
+ *
+ * In both geometries the protein's interface points at the membrane (-z for the
+ * box, radially outward for the sphere), the IL template mirrors
+ * sample_inputs/implicit_lipid/IL.mol, and RS3Dvect is filled exactly as
+ * initialize_paramters_for_implicitlipid_and_compartment_model() does.
  *
  * Association angles are deliberately left at their default quiet_NaN() values
  * (that is what ForwardRxn's default member initialiser provides).  The
@@ -113,12 +119,18 @@ constexpr double kAilBindRadius = 1.0;
 // off the end of a vector.
 constexpr int kAilNumSpecies = 128;
 
+// Implicit-lipid geometry, matching sample_inputs/implicit_lipid/IL.mol: the
+// single interface sits 1e-4 nm above the COM, and radius (and hence mass, see
+// parse_molFile) is the COM-interface distance.
+constexpr double kAilLipidIfaceOffset = 0.0001;
+
 /*! \brief MolTemplate for the soluble protein "A" with a single interface "a".
  *
- * The interface sits 1 nm "below" the centre of mass so that, for the box test,
- * it already points at the membrane.
+ * \param[in] ifaceOffset interface position relative to the COM. It must point
+ *            at the membrane: -z for the flat box (membrane at the bottom),
+ *            radially outward for the sphere (solution is inside the sphere).
  */
-MolTemplate ail_make_protein_template()
+MolTemplate ail_make_protein_template(const Coord& ifaceOffset)
 {
     MolTemplate temp {};
     temp.molName = "A";
@@ -139,7 +151,7 @@ MolTemplate ail_make_protein_template()
     temp.canDestroy = false;
     temp.excludeVolumeBound = false;
 
-    Interface iface("a", Coord(0.0, 0.0, -1.0));
+    Interface iface("a", ifaceOffset);
     iface.index = 0;                                            // relative index
     iface.stateList.emplace_back(Interface::State("a", '\0', 0)); // absolute index 0
     temp.interfaceList.push_back(iface);
@@ -147,29 +159,35 @@ MolTemplate ail_make_protein_template()
     return temp;
 }
 
-/*! \brief MolTemplate for the implicit lipid "IL": a point, immobile, on the membrane. */
+/*! \brief MolTemplate for the implicit lipid "IL", mirroring sample_inputs/implicit_lipid/IL.mol.
+ *
+ * D must be non-zero in x/y: measure_complex_displacement() bounds how far each
+ * complex may move during association by its D, and the box routine shifts
+ * both complexes in x/y to conserve the pair COM. With D = 0 the allowed
+ * displacement is 0 and every association is cancelled.
+ */
 MolTemplate ail_make_lipid_template()
 {
     MolTemplate temp {};
     temp.molName = "IL";
     temp.molTypeIndex = 1;
     temp.copies = 1;
-    temp.mass = 1.0;
-    temp.radius = 1.0;
+    temp.mass = kAilLipidIfaceOffset;
+    temp.radius = kAilLipidIfaceOffset;
     temp.comCoord = Coord(0.0, 0.0, 0.0);
-    temp.D = Coord(0.0, 0.0, 0.0);   // implicit lipid does not move
+    temp.D = Coord(1.0, 1.0, 0.0);
     temp.Dr = Coord(0.0, 0.0, 0.0);
     temp.checkOverlap = false;
     temp.countTransition = false;
     temp.isLipid = true;
     temp.isImplicitLipid = true;
-    temp.isPoint = true;
+    temp.isPoint = false;
     temp.isRod = false;
     temp.isPromoter = false;
     temp.canDestroy = false;
     temp.excludeVolumeBound = false;
 
-    Interface iface("il", Coord(0.0, 0.0, 0.0));
+    Interface iface("il", Coord(0.0, 0.0, kAilLipidIfaceOffset));
     iface.index = 0;
     iface.stateList.emplace_back(Interface::State("il", '\0', 1)); // absolute index 1
     temp.interfaceList.push_back(iface);
@@ -183,8 +201,9 @@ MolTemplate ail_make_lipid_template()
  * \param[in] isSphere   true -> spherical membrane (sphere branch of the dispatcher)
  *                       false -> cubic water box (box branch of the dispatcher)
  * \param[in] proteinCom starting centre of mass of the soluble protein
+ * \param[in] ifaceOffset protein interface position relative to its COM
  */
-AilSystem ail_build_system(bool isSphere, const Coord& proteinCom)
+AilSystem ail_build_system(bool isSphere, const Coord& proteinCom, const Coord& ifaceOffset)
 {
     AilSystem sys {};
 
@@ -230,11 +249,8 @@ AilSystem ail_build_system(bool isSphere, const Coord& proteinCom)
     sys.membrane.numberOfFreeLipidsEachState = std::vector<int> { 100 };
     sys.membrane.numberOfProteinEachState = std::vector<int> { 1 };
     sys.membrane.implicitlipidIndex = 1;
-    // The association code looks the reflecting-surface value up in RS3Dvect by
-    // scanning indices 400..499 (molTypeIndex) and reading 300..399 (RS3D), so
-    // this vector must be comfortably large.
-    sys.membrane.RS3Dvect = std::vector<double>(600, 0.0);
-    sys.membrane.lipidLength = 0.0;
+    // RS3Dvect is filled after the reaction is defined (see below).
+    sys.membrane.lipidLength = kAilLipidIfaceOffset; // = IL template radius
     sys.membrane.xBCtype = "reflect";
     sys.membrane.yBCtype = "reflect";
     sys.membrane.zBCtype = "reflect";
@@ -262,7 +278,7 @@ AilSystem ail_build_system(bool isSphere, const Coord& proteinCom)
     }
 
     /* ---------------------------- mol templates ---------------------------- */
-    sys.molTemplateList.push_back(ail_make_protein_template());
+    sys.molTemplateList.push_back(ail_make_protein_template(ifaceOffset));
     sys.molTemplateList.push_back(ail_make_lipid_template());
 
     /* ------------------------------- molecules ----------------------------- */
@@ -304,7 +320,7 @@ AilSystem ail_build_system(bool isSphere, const Coord& proteinCom)
     lipid.myComIndex = 1;
     lipid.complexId = 1;
     lipid.molTypeIndex = 1;
-    lipid.mass = 1.0;
+    lipid.mass = kAilLipidIfaceOffset;
     lipid.isLipid = true;
     lipid.isImplicitLipid = true;
     lipid.isEmpty = false;
@@ -313,7 +329,7 @@ AilSystem ail_build_system(bool isSphere, const Coord& proteinCom)
     lipid.comCoord = Coord(0.0, 0.0, 0.0);
     {
         Molecule::Iface iface {};
-        iface.coord = Coord(0.0, 0.0, 0.0); // point lipid: interface coincides with the COM
+        iface.coord = Coord(0.0, 0.0, kAilLipidIfaceOffset);
         iface.index = 1;
         iface.relIndex = 0;
         iface.stateIndex = 0;
@@ -359,12 +375,12 @@ AilSystem ail_build_system(bool isSphere, const Coord& proteinCom)
     lipidCplx.index = 1;
     lipidCplx.id = 1;
     lipidCplx.comCoord = sys.moleculeList[1].comCoord;
-    lipidCplx.radius = 1.0;
-    lipidCplx.mass = 1.0;
+    lipidCplx.radius = kAilLipidIfaceOffset;
+    lipidCplx.mass = kAilLipidIfaceOffset;
     lipidCplx.memberList = std::vector<int> { 1 };
     lipidCplx.numEachMol = std::vector<int> { 0, 1 };
     lipidCplx.lastNumberUpdateItrEachMol = std::vector<long long int> { 0, 0 };
-    lipidCplx.D = Coord(0.0, 0.0, 0.0);
+    lipidCplx.D = sys.molTemplateList[1].D;
     lipidCplx.Dr = Coord(0.0, 0.0, 0.0);
     lipidCplx.isEmpty = false;
     lipidCplx.OnSurface = true;
@@ -429,6 +445,25 @@ AilSystem ail_build_system(bool isSphere, const Coord& proteinCom)
     sys.forwardRxns.push_back(sys.currRxn);
     sys.backRxns.emplace_back(1.0, sys.currRxn);
 
+    /* ------------------------------- RS3D table ---------------------------- */
+    // Same layout and formula as
+    // initialize_paramters_for_implicitlipid_and_compartment_model(): -1 padding,
+    // then [i]=sigma, [i+100]=ka, [i+200]=Dtot, [i+300]=RS3D, [i+400]=protein type.
+    // Without a matching entry the association routines fall back to RS3D = -1.
+    {
+        const Coord& D0 = sys.molTemplateList[0].D;
+        const Coord& D1 = sys.molTemplateList[1].D;
+        const double sigma { sys.currRxn.bindRadius };
+        const double ka { sys.currRxn.rateList[0].rate };
+        const double Dtot { 1.0 / 3.0 * (D0.x + D1.x) + 1.0 / 3.0 * (D0.y + D1.y) + 1.0 / 3.0 * (D0.z + D1.z) };
+        sys.membrane.RS3Dvect = std::vector<double>(500, -1.0);
+        sys.membrane.RS3Dvect[0] = sigma;
+        sys.membrane.RS3Dvect[100] = ka;
+        sys.membrane.RS3Dvect[200] = Dtot;
+        sys.membrane.RS3Dvect[300] = sigma * ka * 2.0 / (ka * 2.0 + 4 * M_PI * sigma * Dtot);
+        sys.membrane.RS3Dvect[400] = sys.molTemplateList[0].molTypeIndex;
+    }
+
     /* ----------------------------- copyCounters ---------------------------- */
     // Generously sized and pre-populated so that no increment/decrement of a
     // species counter can index out of range or drive a count negative.
@@ -481,7 +516,7 @@ void test_ail_box_creates_bond()
     ail_init_rng();
 
     // Protein starts 5 nm above the membrane plane (z = -50), interface at z = -46.
-    AilSystem sys = ail_build_system(/*isSphere=*/false, Coord(0.0, 0.0, -45.0));
+    AilSystem sys = ail_build_system(/*isSphere=*/false, Coord(0.0, 0.0, -45.0), Coord(0.0, 0.0, -1.0));
 
     std::ofstream assocDissocFile("test_associate_implicitlipid_box_bond.tmp");
 
@@ -547,7 +582,7 @@ void test_ail_box_pulls_protein_to_planar_membrane()
 
     ail_init_rng();
 
-    AilSystem sys = ail_build_system(/*isSphere=*/false, Coord(0.0, 0.0, -45.0));
+    AilSystem sys = ail_build_system(/*isSphere=*/false, Coord(0.0, 0.0, -45.0), Coord(0.0, 0.0, -1.0));
     std::ofstream assocDissocFile("test_associate_implicitlipid_box_geom.tmp");
 
     const Coord comBefore = sys.moleculeList[0].comCoord;
@@ -594,6 +629,21 @@ void test_ail_box_pulls_protein_to_planar_membrane()
         << "The protein COM must stay inside the box in x";
     EXPECT_LE(std::abs(comAfter.y), halfY + 1e-6)
         << "The protein COM must stay inside the box in y";
+
+    // The box routine translates the protein to sigma + RS3D (not sigma), then
+    // re-centres the pair COM in x/y, so the final separation is only close to
+    // sigma + RS3D. The implicit lipid itself stays on the membrane plane.
+    const double rs3d { sys.membrane.RS3Dvect[300] };
+    EXPECT_NEAR(sepAfter, sys.currRxn.bindRadius + rs3d, 0.02)
+        << "The reacting interfaces should end up ~sigma + RS3D apart";
+    EXPECT_GT(ifaceAfter.z, -halfZ)
+        << "The protein's bound interface must stay above the membrane plane";
+    EXPECT_NEAR(sys.moleculeList[1].comCoord.z, -halfZ, 1e-6)
+        << "The implicit lipid must remain on the membrane plane";
+    EXPECT_TRUE(sys.complexList[0].OnSurface)
+        << "The protein's complex should be flagged as on the membrane";
+    EXPECT_DOUBLE_EQ(sys.complexList[0].D.z, 0.0)
+        << "A membrane-bound complex must not diffuse in z";
 }
 
 // -----------------------------------------------------------------------------
@@ -610,7 +660,7 @@ void test_ail_box_updates_species_counters()
 
     ail_init_rng();
 
-    AilSystem sys = ail_build_system(/*isSphere=*/false, Coord(0.0, 0.0, -45.0));
+    AilSystem sys = ail_build_system(/*isSphere=*/false, Coord(0.0, 0.0, -45.0), Coord(0.0, 0.0, -1.0));
     std::ofstream assocDissocFile("test_associate_implicitlipid_box_counters.tmp");
 
     const int reactantIdx = sys.currRxn.reactantListNew[0].absIfaceIndex; // 0
@@ -660,7 +710,7 @@ void test_ail_sphere_uses_spherical_geometry()
 
     ail_init_rng();
 
-    AilSystem sys = ail_build_system(/*isSphere=*/true, Coord(0.0, 0.0, 95.0));
+    AilSystem sys = ail_build_system(/*isSphere=*/true, Coord(0.0, 0.0, 95.0), Coord(0.0, 0.0, 1.0));
     std::ofstream assocDissocFile("test_associate_implicitlipid_sphere.tmp");
 
     const Coord comBefore = sys.moleculeList[0].comCoord;
@@ -669,9 +719,10 @@ void test_ail_sphere_uses_spherical_geometry()
     const double sepBefore = ail_distance(ifaceBefore, lipidIfaceBefore);
 
     std::cerr << "  sphere radius             = " << sys.membrane.sphereR << " nm\n";
+     std::cerr << "  protein Interface before        = " << ifaceBefore << "\n";
     std::cerr << "  protein COM before        = " << comBefore
               << "  (|r| = " << ail_radius(comBefore) << ")\n";
-    std::cerr << "  implicit lipid iface      = " << lipidIfaceBefore
+    std::cerr << "  implicit lipid iface before     = " << lipidIfaceBefore
               << "  (|r| = " << ail_radius(lipidIfaceBefore) << ")\n";
     std::cerr << "  separation before         = " << sepBefore
               << " nm  (sigma = " << sys.currRxn.bindRadius << " nm)\n";
@@ -689,6 +740,8 @@ void test_ail_sphere_uses_spherical_geometry()
               << "  (|r| = " << ail_radius(comAfter) << ")\n";
     std::cerr << "  protein iface after       = " << ifaceAfter
               << "  (|r| = " << ail_radius(ifaceAfter) << ")\n";
+    std::cerr << "  Implicit Lipid iface after       = " << lipidIfaceAfter
+              << "  (|r| = " << ail_radius(lipidIfaceAfter) << ")\n";
     std::cerr << "  separation after          = " << sepAfter << " nm\n";
     std::cerr << "  after: isBound            = " << std::boolalpha
               << sys.moleculeList[0].interfaceList[0].isBound << '\n';
@@ -709,14 +762,24 @@ void test_ail_sphere_uses_spherical_geometry()
     EXPECT_LT(sepAfter, sepBefore)
         << "Association must bring the two reacting interfaces closer together";
 
+    // The sphere routine translates the protein to exactly sigma (no RS3D offset)
+    // and then pins its reacting interface onto the shell |r| = R.
+    EXPECT_NEAR(sepAfter, sys.currRxn.bindRadius, 1e-6)
+        << "The reacting interfaces should end up exactly sigma apart";
+    EXPECT_NEAR(ail_radius(ifaceAfter), sys.membrane.sphereR, 1e-6)
+        << "The protein's bound interface should sit on the spherical membrane";
+
     // The distinguishing geometric check: on a sphere the protein stays in the
-    // hemisphere it started in and near the shell -- it is NOT dragged to the
+    // hemisphere it started in, inside the shell -- it is NOT dragged to the
     // bottom of a flat box at z = -waterBox.z/2 = -100.
     EXPECT_GT(comAfter.z, 0.0)
         << "The sphere branch must keep the protein in the +z hemisphere "
            "(a planar-membrane move would have sent z strongly negative)";
-    EXPECT_NEAR(ail_radius(comAfter), sys.membrane.sphereR, 10.0)
-        << "The protein COM should end up within ~10 nm of the spherical membrane shell";
+    EXPECT_LT(ail_radius(comAfter), sys.membrane.sphereR)
+        << "The protein COM must stay inside the sphere (solution side)";
+    EXPECT_NEAR(ail_radius(comAfter),
+        sys.membrane.sphereR - ail_distance(comBefore, ifaceBefore), 1e-6)
+        << "The protein COM should sit one COM-interface length inside the shell";
 }
 
 // -----------------------------------------------------------------------------
