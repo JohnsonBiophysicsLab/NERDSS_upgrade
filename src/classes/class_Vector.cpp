@@ -14,6 +14,7 @@ Vector::Vector(double x, double y)
 {
     this->x = x;
     this->y = y;
+    this->calc_magnitude();
 }
 
 Vector::Vector(const double& x, const double& y, const double& z)
@@ -21,6 +22,7 @@ Vector::Vector(const double& x, const double& y, const double& z)
     this->x = x;
     this->y = y;
     this->z = z;
+    this->calc_magnitude();
 }
 
 Vector::Vector(const Coord& coordEnd, const Coord& coordStart)
@@ -29,6 +31,7 @@ Vector::Vector(const Coord& coordEnd, const Coord& coordStart)
     this->x = coordEnd.x - coordStart.x;
     this->y = coordEnd.y - coordStart.y;
     this->z = coordEnd.z - coordStart.z;
+    this->calc_magnitude();
 }
 
 Vector::Vector(Coord coord)
@@ -37,6 +40,7 @@ Vector::Vector(Coord coord)
     x = coord.x;
     y = coord.y;
     z = coord.z;
+    this->calc_magnitude();
 }
 
 Vector::Vector(std::array<double, 3>& arr)
@@ -45,6 +49,7 @@ Vector::Vector(std::array<double, 3>& arr)
     x = arr[0];
     y = arr[1];
     z = arr[2];
+    this->calc_magnitude();
 }
 
 Vector::Vector(std::vector<double> arr)
@@ -57,7 +62,7 @@ Vector::Vector(std::vector<double> arr)
     x = arr[0];
     y = arr[1];
     z = arr[2];
-
+    this->calc_magnitude();
     //    magnitude = sqrt(x*x + y*y + z*z);
 }
 

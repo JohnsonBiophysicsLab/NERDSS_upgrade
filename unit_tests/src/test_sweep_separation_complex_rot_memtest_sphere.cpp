@@ -542,6 +542,7 @@ void test_sscrms_partner_on_sphere_surface()
     params.timeStep = 1.0;
 
     const double sphereR = 100.0;
+    params.sphereR = sphereR;
     Membrane membraneObject = sscrms_make_sphere_membrane(sphereR);
     std::vector<MolTemplate> molTemplateList { sscrms_make_template() };
     std::vector<ForwardRxn> forwardRxns { sscrms_make_rxn(1.0) };

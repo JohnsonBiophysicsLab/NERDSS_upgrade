@@ -625,6 +625,7 @@ void test_ccpv_on_sphere_surface_branch()
     Membrane membraneObject;
     membraneObject.isSphere = true;
     membraneObject.sphereR = R;
+    params.sphereR = R;
     membraneObject.sphereVol = (4.0 / 3.0) * M_PI * R * R * R;
     membraneObject.waterBox = Membrane::WaterBox(std::vector<double> { 2 * R, 2 * R, 2 * R });
     membraneObject.implicitLipid = false;
@@ -634,7 +635,7 @@ void test_ccpv_on_sphere_surface_branch()
 
     // The complex sits exactly on the spherical shell (required: the surface
     // propagator works in spherical coordinates, so the radius must be > 0).
-    const Coord onShell { 0.0, 0.0, -R };
+    const Coord onShell { 0.0, R, 0.0 };
     std::vector<Molecule> moleculeList { ccpv_make_molecule(onShell, 0) };
     Complex targCom = ccpv_make_complex(onShell, D, 0.0); // Dr == 0 on purpose
     targCom.OnSurface = true;
