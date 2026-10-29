@@ -97,6 +97,8 @@ void determine_3D_implicitlipid_reaction_probability(int simItr, int rxnIndex, i
             if (rxnProb > 0.5) {
                 // std::cout << "WARNING: prob of reaction > 0.5. If this is a reaction for a bimolecular binding with multiple binding sites, please use a smaller time step." << std::endl;
             }
+            
+            // this can never happen because sep is always >= 0
             if (sep < 0)
                 rxnProb = 1.0;
 

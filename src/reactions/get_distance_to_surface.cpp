@@ -18,9 +18,11 @@ bool get_distance_to_surface(int pro1, int pro2, int iface1, int iface2, int rxn
 
         } else {
             dz = moleculeList[pro1].interfaceList[iface1].coord.z - (-membraneObject.waterBox.z / 2.0) - membraneObject.lipidLength;
-            R1 = sqrt((dz * dz));
+            R1 = std::abs(dz);
         }
     }
+
+    // Separation is never negative.
     sep = R1;
 
     /*Rmax should be the binding radius plus ~max diffusion distance, using 3*sqrt(6*Dtot*deltat)*/

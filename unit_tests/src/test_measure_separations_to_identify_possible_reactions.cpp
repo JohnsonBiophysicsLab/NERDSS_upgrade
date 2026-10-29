@@ -81,10 +81,15 @@ void msipr_ensure_rng()
  * \param[in] absIfaceIndex Absolute (state) index of the single interface.
  * \param[in] partnerAbsIfaceIndex Absolute index of the interface this state
  *                                 can react with (-1 => no partners at all).
+ * \param[in] partnerMolTypeIndex  MolTemplate index of the molecule type this
+ *                                 template can react with (-1 => none).  This
+ *                                 populates MolTemplate::rxnPartners, which is
+ *                                 what check_bimolecular_reactions() screens on
+ *                                 before it ever looks at the interface states.
  * \param[in] hasForwardRxn Whether the state points at forward reaction 0.
  */
 MolTemplate msipr_make_template(int molTypeIndex, const std::string& name, int absIfaceIndex,
-    int partnerAbsIfaceIndex, bool hasForwardRxn)
+    int partnerAbsIfaceIndex, int partnerMolTypeIndex, bool hasForwardRxn)
 {
     MolTemplate temp;
     temp.molTypeIndex = molTypeIndex;
@@ -114,6 +119,10 @@ MolTemplate msipr_make_template(int molTypeIndex, const std::string& name, int a
     iface.stateList.push_back(state);
 
     temp.interfaceList.push_back(iface);
+
+    // Molecule-type level partner screen used by check_bimolecular_reactions().
+    if (partnerMolTypeIndex >= 0)
+        temp.rxnPartners.push_back(partnerMolTypeIndex);
 
     // Nothing exotic: no implicit lipid, no surface adsorption, no exclusion.
     temp.isImplicitLipid = false;
@@ -278,8 +287,8 @@ struct MsiprSystem {
 
         // ---- Molecule templates: A(a) + B(a) <-> A(a!1).B(a!1) ---------
         // A has absolute interface index 0, B has absolute index 1.
-        molTemplateList.push_back(msipr_make_template(0, "A", 0, /*partner*/ 1, true));
-        molTemplateList.push_back(msipr_make_template(1, "B", 1, /*partner*/ 0, true));
+        molTemplateList.push_back(msipr_make_template(0, "A", 0, /*partnerIface*/ 1, /*partnerMolType*/ 1, true));
+        molTemplateList.push_back(msipr_make_template(1, "B", 1, /*partnerIface*/ 0, /*partnerMolType*/ 0, true));
 
         // ---- The bimolecular reaction itself ---------------------------
         forwardRxns.push_back(msipr_make_forward_rxn(0, 0, 1, 1, /*bindRadius*/ 1.0, /*rate*/ 10.0));
@@ -629,8 +638,8 @@ void msipr_test_no_reaction_partners_records_nothing()
     MsiprSystem sys;
     // Replace the reactive templates with inert ones (no partners, no rxns).
     sys.molTemplateList.clear();
-    sys.molTemplateList.push_back(msipr_make_template(0, "A", 0, /*partner*/ -1, false));
-    sys.molTemplateList.push_back(msipr_make_template(1, "B", 1, /*partner*/ -1, false));
+    sys.molTemplateList.push_back(msipr_make_template(0, "A", 0, /*partnerIface*/ -1, /*partnerMolType*/ -1, false));
+    sys.molTemplateList.push_back(msipr_make_template(1, "B", 1, /*partnerIface*/ -1, /*partnerMolType*/ -1, false));
 
     sys.add_AB_pair(Coord { 0.0, 0.0, 0.0 }, Coord { 3.0, 0.0, 0.0 });
     sys.add_cell(0, { 0, 1 }, {});

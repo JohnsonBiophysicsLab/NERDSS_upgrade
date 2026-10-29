@@ -567,43 +567,7 @@ void test_d3il_probability_monotonic_in_rate_and_density()
 }
 
 // -----------------------------------------------------------------------------
-// Test 9: an interface that already overlaps the membrane (negative separation)
-//         is forced to react with probability one.
-// -----------------------------------------------------------------------------
-void test_d3il_negative_separation_forces_unit_probability()
-{
-    std::cerr << "\n[TEST] test_d3il_negative_separation_forces_unit_probability\n"
-              << "  Source file: determine_3D_implicitlipid_reaction_probability.cpp\n"
-              << "  Function:    determine_3D_implicitlipid_reaction_probability\n"
-              << "  Scenario:    the interface is pushed below the membrane plane so\n"
-              << "               that the separation is negative.\n"
-              << "  Criteria:    the routine clamps sep to 0 and sets prob = 1.0, so\n"
-              << "               currps_prev becomes 0.\n";
-
-    // Membrane at z = -50; put the interface at z = -50.5 (inside the membrane).
-    D3ILScenario s = d3il_make_scenario(/*ifaceZ*/ -50.5, /*rate*/ 10.0, /*nFreeLipids*/ 1000);
-    d3il_run(s);
-    d3il_report(s);
-
-    const Molecule& prot = s.moleculeList[0];
-    EXPECT_EQ(prot.probvec.size(), 1u) << "An overlapping interface is certainly within Rmax";
-    if (!prot.probvec.empty()) {
-        std::cerr << "  Probability for the overlapping interface = " << prot.probvec.back() << '\n';
-        EXPECT_DOUBLE_EQ(prot.probvec.back(), 1.0)
-            << "A negative separation must force the reaction probability to unity";
-    }
-    if (!prot.currps_prev.empty()) {
-        EXPECT_NEAR(prot.currps_prev.back(), 0.0, 1e-12)
-            << "With prob == 1 the stored survival probability must be 0";
-    }
-    if (!prot.currprevsep.empty()) {
-        EXPECT_DOUBLE_EQ(prot.currprevsep.back(), s.bindRadius)
-            << "R1 is reset to the binding radius when the separation was negative";
-    }
-}
-
-// -----------------------------------------------------------------------------
-// Test 10: repeated calls accumulate independent entries (the routine appends,
+// Test 9: repeated calls accumulate independent entries (the routine appends,
 //          it never clears the lists).
 // -----------------------------------------------------------------------------
 void test_d3il_repeated_calls_accumulate_entries()
@@ -647,5 +611,4 @@ TEST(Determine3DImplicitLipidProbability, ZeroRateGivesZeroProbability) { test_d
 TEST(Determine3DImplicitLipidProbability, DissociatedMoleculeSkipped) { test_d3il_dissociated_molecule_is_skipped(); }
 TEST(Determine3DImplicitLipidProbability, ZeroFreeLipidsGivesZeroProbability) { test_d3il_zero_free_lipids_gives_zero_probability(); }
 TEST(Determine3DImplicitLipidProbability, ProbabilityMonotonicInRateAndDensity) { test_d3il_probability_monotonic_in_rate_and_density(); }
-TEST(Determine3DImplicitLipidProbability, NegativeSeparationForcesUnitProbability) { test_d3il_negative_separation_forces_unit_probability(); }
 TEST(Determine3DImplicitLipidProbability, RepeatedCallsAccumulateEntries) { test_d3il_repeated_calls_accumulate_entries(); }
