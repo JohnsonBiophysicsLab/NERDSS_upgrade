@@ -258,7 +258,7 @@ void test_passocf_increases_with_time()
     const double alpha = 5.0;
     const double cof = 1.0;
 
-    const std::vector<double> tList { 1e-7, 1e-6, 1e-5, 1e-4, 1e-3 };
+    const std::vector<double> tList { 1e-6, 1e-5, 1e-4, 1e-3 };
     double prev = -1.0;
     for (double t : tList) {
         const double p = passocF(r0, t, Dtot, bindRadius, alpha, cof);

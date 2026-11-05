@@ -194,9 +194,11 @@ PifarsSystem pifars_build_minimal_system()
 {
     PifarsSystem sys;
 
-    // --- static bookkeeping that the Complex constructor reads ---------------
+    // --- static bookkeeping that the Complex constructor reads ---------------    
     MolTemplate::numMolTypes = 2;
     MolTemplate::numEachMolType = std::vector<int> { 2, 2 };
+    // absolute iface index -> relative iface index, normally filled by parse_molFile()
+    MolTemplate::absToRelIface = std::vector<int> { 0, 0 };
 
     // --- parameters ----------------------------------------------------------
     sys.params.numMolTypes = 2;

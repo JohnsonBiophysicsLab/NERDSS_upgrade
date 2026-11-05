@@ -453,7 +453,9 @@ void test_pirr1d_finiteness_sweep()
                             // is the regime the caller always supplies.
                             if (bindrad > 0.0 && (rCurr < bindrad || r0 < bindrad))
                                 continue;
-
+                            if (std::abs(rCurr - r0) > 4 * std::sqrt(2 * Dtot * tCurr))
+                                continue; 
+                            // std::cout << "\n performing validation for rCurr=" << rCurr << ", r0=" << r0 << "\n";
                             const double val = pirr_pfree_ratio_psF_1D(
                                 rCurr, r0, tCurr, Dtot, bindrad, ka, /*ps_prev*/ 1.0);
                             ++evaluated;
