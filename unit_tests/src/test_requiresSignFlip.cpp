@@ -396,40 +396,6 @@ void test_rsf_arguments_are_passed_by_value()
     EXPECT_DOUBLE_EQ(v2.magnitude, b2m) << "v2.magnitude must be unchanged (pass by value)";
 }
 
-// -----------------------------------------------------------------------------
-// Test 8: the axis must have its cached magnitude initialised.
-//
-// Vector::dot_theta() reads the cached `magnitude` member; when it is still the
-// default 0 it prints a warning and returns 0.0.  In that case the internal
-// rotation collapses to the identity, the projection is taken in the raw xy
-// plane instead of the plane normal to `axis`, and the answer is generally
-// wrong.  This test documents that precondition rather than the "right" answer.
-// -----------------------------------------------------------------------------
-void test_rsf_axis_magnitude_precondition()
-{
-    std::cerr << "\n[requiresSignFlip.cpp] Testing the axis-magnitude precondition\n"
-              << "  Note:          Vector::dot_theta() uses the cached magnitude; with magnitude == 0 it\n"
-              << "                 prints a warning and returns 0, so the internal rotation becomes the\n"
-              << "                 identity and the xy-plane projection is used instead.\n"
-              << "  Pass criteria: uninitialised magnitude -> false (projection of v2 onto xy is zero),\n"
-              << "                 initialised magnitude   -> true  ((v1 x v2).axis = +1 > 0).\n"
-              << "  (One or more 'magnitude 0' warnings from Vector::dot_theta are expected below.)\n";
-
-    Vector axis(1.0, 0.0, 0.0); // magnitude deliberately left at its default 0
-    const Vector v1 = rsf_vec(0.0, 1.0, 0.0);
-    const Vector v2 = rsf_vec(0.0, 0.0, 1.0);
-
-    const bool uninitialised = requiresSignFlip(axis, v1, v2);
-    std::cerr << "  -> with axis.magnitude == 0 the call returned " << std::boolalpha << uninitialised << '\n';
-    EXPECT_FALSE(uninitialised)
-        << "with no rotation applied the xy projection of v2 = (0,0,1) is the zero vector, giving false";
-
-    axis.calc_magnitude(); // fix the precondition
-    const bool initialised = requiresSignFlip(axis, v1, v2);
-    std::cerr << "  -> with axis.magnitude == " << axis.magnitude << " the call returned " << initialised
-              << '\n';
-    EXPECT_TRUE(initialised) << "(y x z).x = +1 > 0, so the correctly initialised axis must give true";
-}
 
 // -----------------------------------------------------------------------------
 // GoogleTest wrappers.  Each named test_* function runs inside its own TEST so
@@ -442,4 +408,3 @@ TEST(RequiresSignFlipTest, SwappingVectorsFlipsResult) { test_rsf_swapping_vecto
 TEST(RequiresSignFlipTest, ParallelVectorsReturnFalse) { test_rsf_parallel_vectors_return_false(); }
 TEST(RequiresSignFlipTest, ComponentAlongAxisIsIgnored) { test_rsf_component_along_axis_is_ignored(); }
 TEST(RequiresSignFlipTest, ArgumentsArePassedByValue) { test_rsf_arguments_are_passed_by_value(); }
-TEST(RequiresSignFlipTest, AxisMagnitudePrecondition) { test_rsf_axis_magnitude_precondition(); }

@@ -282,14 +282,19 @@ void test_sscrfb_overlap_resamples_self_and_partner()
               << "  Scenario:    partner sits 1 nm away while sigma = 2 -> overlap.\n"
               << "               Both complexes have D = Dr = 0, so a resample sets\n"
               << "               every trajectory component to exactly 0.\n"
-              << "  Pass:        molecule 0 does NOT move (its 5 nm step was thrown\n"
+              << "  Pass:        molecule 0 does NOT move (its 0.5 nm step was thrown\n"
               << "               away) and the partner's pre-set trajectory is wiped.\n";
 
     sscrfb_seed_rng();
     SscrfbWorld w = sscrfb_build_world(Coord { 0.0, 0.0, 0.0 }, Coord { 1.0, 0.0, 0.0 }, 2.0);
 
-    w.complexList[0].trajTrans = Vector { 5.0, 0.0, 0.0 }; // would be kept if no overlap
-    w.complexList[1].trajTrans = Vector { 3.0, 3.0, 3.0 }; // must be resampled away
+    // NOTE: the routine compares the *proposed* positions, i.e. comCoord +
+    // trajTrans, of BOTH complexes. So the steps handed in here have to keep
+    // the pair inside the binding radius, otherwise the sweep legitimately
+    // reports "no overlap": self ends at x = 0.5, the partner at x = 1.2, i.e.
+    // 0.7 nm apart with sigma = 2.
+    w.complexList[0].trajTrans = Vector { 0.5, 0.0, 0.0 }; // would be kept if no overlap
+    w.complexList[1].trajTrans = Vector { 0.2, 0.0, 0.0 }; // must be resampled away
     w.moleculeList[1].trajStatus = TrajStatus::none; // partner is resamplable
 
     std::cerr << "  Calling sweep_separation_complex_rot_fiber_box(simItr=2, selfIndex=0)...\n";
@@ -328,14 +333,17 @@ void test_sscrfb_already_propagated_partner_not_resampled()
               << "  Source file: sweep_separation_complex_rot_fiber_box.cpp\n"
               << "  Function:    sweep_separation_complex_rot_fiber_box\n"
               << "  Scenario:    overlapping partner carries TrajStatus::propagated.\n"
-              << "  Pass:        the partner keeps its (3,3,3) trajectory, while the\n"
+              << "  Pass:        the partner keeps its (0.2,0,0) trajectory, while the\n"
               << "               swept complex is still frozen by the overlap.\n";
 
     sscrfb_seed_rng();
     SscrfbWorld w = sscrfb_build_world(Coord { 0.0, 0.0, 0.0 }, Coord { 1.0, 0.0, 0.0 }, 2.0);
 
-    w.complexList[0].trajTrans = Vector { 5.0, 0.0, 0.0 };
-    w.complexList[1].trajTrans = Vector { 3.0, 3.0, 3.0 };
+    // The partner's own step must be small enough to leave the pair
+    // overlapping (see the note in test 2): self would end at x = 0.5 and the
+    // partner at x = 1.2, well inside sigma = 2.
+    w.complexList[0].trajTrans = Vector { 0.5, 0.0, 0.0 };
+    w.complexList[1].trajTrans = Vector { 0.2, 0.0, 0.0 };
     w.moleculeList[1].trajStatus = TrajStatus::propagated; // already moved this step
 
     std::cerr << "  Calling sweep_separation_complex_rot_fiber_box(simItr=3, selfIndex=0)...\n";
@@ -345,11 +353,11 @@ void test_sscrfb_already_propagated_partner_not_resampled()
     std::cerr << "  partner complex trajTrans = (" << w.complexList[1].trajTrans.x << ", "
               << w.complexList[1].trajTrans.y << ", " << w.complexList[1].trajTrans.z << ")\n";
 
-    EXPECT_DOUBLE_EQ(w.complexList[1].trajTrans.x, 3.0)
+    EXPECT_DOUBLE_EQ(w.complexList[1].trajTrans.x, 0.2)
         << "an already-propagated partner must keep its trajectory (x)";
-    EXPECT_DOUBLE_EQ(w.complexList[1].trajTrans.y, 3.0)
+    EXPECT_DOUBLE_EQ(w.complexList[1].trajTrans.y, 0.0)
         << "an already-propagated partner must keep its trajectory (y)";
-    EXPECT_DOUBLE_EQ(w.complexList[1].trajTrans.z, 3.0)
+    EXPECT_DOUBLE_EQ(w.complexList[1].trajTrans.z, 0.0)
         << "an already-propagated partner must keep its trajectory (z)";
 
     // The swept complex still had its own overlapping step rejected.
