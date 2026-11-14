@@ -74,7 +74,7 @@ std::ostream& operator<<(std::ostream& os, Vector& vec)
 Coord operator+(const Vector& vec, const Coord& crd) { return { vec.x + crd.x, vec.y + crd.y, vec.z + crd.z }; }
 
 /* MEMBER FUNCTIONS */
-Vector Vector::cross(const Vector& vec) const
+Vector Vector::cross_normed(const Vector& vec) const
 {
     double u0 = this->y * vec.z - this->z * vec.y;
     double u1 = this->z * vec.x - this->x * vec.z;

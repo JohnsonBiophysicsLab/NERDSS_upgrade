@@ -131,7 +131,7 @@ void test_cross()
     // x-axis cross y-axis = z-axis (already unit length, so normalization is a no-op).
     Vector a(1.0, 0.0, 0.0);
     Vector b(0.0, 1.0, 0.0);
-    Vector result = a.cross(b);
+    Vector result = a.cross_normed(b);
     std::cerr << "  (1,0,0) x (0,1,0) normalized = ("
               << result.x << "," << result.y << "," << result.z << ")\n";
     EXPECT_NEAR(result.x, 0.0, kTol) << "cross: x component should be 0";
@@ -141,7 +141,7 @@ void test_cross()
     // A non-unit example: (1,2,3) x (4,5,6) = (-3,6,-3), which normalizes.
     Vector c(1.0, 2.0, 3.0);
     Vector d(4.0, 5.0, 6.0);
-    Vector result2 = c.cross(d);
+    Vector result2 = c.cross_normed(d);
     // Unnormalized cross is (-3, 6, -3), magnitude = sqrt(9+36+9) = sqrt(54).
     double mag = std::sqrt(54.0);
     std::cerr << "  (1,2,3) x (4,5,6) normalized = ("

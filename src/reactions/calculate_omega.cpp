@@ -24,7 +24,7 @@ double calculate_omega(Coord reactIface1, int reactIface2, Vector& sigma,
     Vector projVec2 { v2.x, v2.y, 0 };
     projVec1.calc_magnitude();
     projVec2.calc_magnitude();
-    Vector test = projVec1.cross(projVec2);
+    Vector test = projVec1.cross_normed(projVec2);
     double omega = projVec1.dot_theta(projVec2);
     double tol = 1E-11;
     /*DO NOT FLIP SIGN IF IT IS PI OR ZERO, DUE TO PRECISION, z COULD BE >0! */
@@ -32,7 +32,7 @@ double calculate_omega(Coord reactIface1, int reactIface2, Vector& sigma,
         omega = -omega;
     return omega;
 
-    //(projVec1.cross(projVec2).z < 0) ? projVec1.dot_theta(projVec2) : -projVec1.dot_theta(projVec2);
+    //(projVec1.cross_normed(projVec2).z < 0) ? projVec1.dot_theta(projVec2) : -projVec1.dot_theta(projVec2);
 
     //    projVec1 = Vector { v1.x, v1.y, 0 };
     //    projVec2 = Vector { v2.x, v2.y, 0 };

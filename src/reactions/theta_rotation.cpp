@@ -29,7 +29,7 @@ void theta_rotation(Coord& reactIface1, Coord& reactIface2, Molecule& reactMol1,
         // if sigma and v1 are parallel, rotation axis can't be determined by the cross product
         // so we need to find an arbitrary vector orthogonal to either. Choose either x or y axis,
         //whichever one is not parallel.
-        Vector rotAxis = (areParallel(currTheta)) ? create_arbitrary_vector(v1) : sigma.cross(v1);
+        Vector rotAxis = (areParallel(currTheta)) ? create_arbitrary_vector(v1) : sigma.cross_normed(v1);
         rotAxis.normalize();
 
         // Determine how far to rotate each Molecule, based on their respective rotation diffusion constants

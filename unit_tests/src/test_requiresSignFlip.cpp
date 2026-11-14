@@ -70,8 +70,6 @@ Vector rsf_vec(double x, double y, double z)
 /*! \brief Plain (non-normalised) cross product, used as the independent
  *         reference implementation.
  *
- * Note that Vector::cross() normalises its result; the SIGN of every component
- * is identical either way, which is all these tests care about.
  */
 Vector rsf_raw_cross(const Vector& a, const Vector& b)
 {

@@ -235,15 +235,15 @@ std::array<double, 9> inner_coord_set(Coord com, Coord comnew)
         if (std::abs(std::abs(com.z) - com.get_magnitude()) < 1E-8) {
             v = Vector { -1.0, 0.0, 0.0 };
         }
-        j = v.cross(i);
-        k = i.cross(j);
+        j = v.cross_normed(i);
+        k = i.cross_normed(j);
     } else {
         i = Vector { com.x, com.y, com.z };
         i.normalize();
         v = Vector { comnew.x, comnew.y, comnew.z };
         v.normalize();
-        k = i.cross(v);
-        j = k.cross(i);
+        k = i.cross_normed(v);
+        j = k.cross_normed(i);
     }
     i.normalize();
     j.normalize();
@@ -282,8 +282,8 @@ std::array<double, 9> inner_coord_set_new(Coord com, Coord comnew)
         if (std::abs(std::abs(comnew.z) - comnew.get_magnitude()) < 1E-8) {
             v = Vector { -1.0, 0.0, 0.0 };
         }
-        j = v.cross(i);
-        k = i.cross(j);
+        j = v.cross_normed(i);
+        k = i.cross_normed(j);
     } else {
         Coord dist = comnew - com;
         double l = dist.get_magnitude();
@@ -297,8 +297,8 @@ std::array<double, 9> inner_coord_set_new(Coord com, Coord comnew)
 
         i = Vector { com.x, com.y, com.z };
         v = Vector { comnew.x, comnew.y, comnew.z };
-        k = i.cross(v);
-        j = k.cross(i);
+        k = i.cross_normed(v);
+        j = k.cross_normed(i);
     }
     i.normalize();
     j.normalize();

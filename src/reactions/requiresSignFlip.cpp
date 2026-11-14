@@ -1,4 +1,5 @@
 #include "reactions/association/association.hpp"
+#include "math/matrix.hpp"
 
 bool requiresSignFlip(Vector axis, Vector v1, Vector v2)
 {
@@ -6,12 +7,12 @@ bool requiresSignFlip(Vector axis, Vector v1, Vector v2)
     Vector xAxis { 1, 0, 0};
     zAxis.magnitude = 1.0;
     xAxis.magnitude = 1.0;
-    Vector u { zAxis.cross(axis) };
+    Vector u { zAxis.cross_normed(axis) };
     u.calc_magnitude();
     double theta { zAxis.dot_theta(axis) };
     double useXAxis { false };
     if (std::abs(u.x) < 1E-8 && std::abs(u.y) < 1E-8 && std::abs(u.z) < 1E-8) {
-        u  = xAxis.cross(axis);
+        u  = xAxis.cross_normed(axis);
         u.calc_magnitude();
         theta = xAxis.dot_theta(axis);
         useXAxis = true;
@@ -40,11 +41,13 @@ bool requiresSignFlip(Vector axis, Vector v1, Vector v2)
     if (!useXAxis) {
         projectedVec1 = Vector{v1.x, v1.y, 0};
         projectedVec2 = Vector{v2.x, v2.y, 0};
-        return projectedVec1.cross(projectedVec2).z > 0;
+        const double tol { 1e-12 * projectedVec1.magnitude * projectedVec2.magnitude };
+        return raw_cross(projectedVec1, projectedVec2).z > tol;
     } else {
         projectedVec1 = Vector(0, v1.y, v1.z);
         projectedVec2 = Vector(0, v2.y, v2.z);
-        return projectedVec1.cross(projectedVec2).x > 0;
+        const double tol { 1e-12 * projectedVec1.magnitude * projectedVec2.magnitude };
+        return raw_cross(projectedVec1, projectedVec2).x > tol;
     }
 
     // if the angle sign isn't correct, return true

@@ -12,10 +12,10 @@ bool angleSignIsCorrect(const Vector& vec1, const Vector& vec2)
     if (std::abs(vec1.z) > 1E-12 && std::abs(vec2.z) > 1E-12) {
         Vector newVec1 { vec1.x, 0, vec1.z };
         Vector newVec2 { vec2.x, 0, vec2.z };
-        return newVec1.cross(newVec2).y < 0;
+        return newVec1.cross_normed(newVec2).y < 0;
     } else {
         Vector newVec1 { vec1.x, vec1.y, 0 };
         Vector newVec2 { vec2.x, vec2.y, 0 };
-        return newVec1.cross(newVec2).z < 0;
+        return newVec1.cross_normed(newVec2).z < 0;
     }
 }

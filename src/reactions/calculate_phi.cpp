@@ -30,7 +30,7 @@ double calculate_phi(Coord reactIface1, int ifaceIndex2, Molecule reactMol1, Mol
     /*if their normal points in -z, keep theta, otherwise flip sign                                                                                                                                             
     ADDED: Do not flip the sign if it is PI or Zero.                                                                                                                                                          
     */
-    Vector test { projVec1.cross(projVec2) };
+    Vector test { projVec1.cross_normed(projVec2) };
     //double *test=new double[3];
     //crossproduct(sigma, normal, test);
     if (test.z > 0 && std::abs(phi) > 1E-12 && (M_PI - std::abs(phi)) > 1E-12) //positive z, flip phi

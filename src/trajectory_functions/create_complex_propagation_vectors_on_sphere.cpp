@@ -38,9 +38,9 @@ Coord create_complex_propagation_vectors_on_sphere(const Parameters& params, Com
     i.normalize();
     Vector temp = Vector { 0.0, 0.0, COM.get_magnitude() };
     temp.normalize();
-    Vector j = temp.cross(i);
+    Vector j = temp.cross_normed(i);
     j.normalize();
-    Vector k = i.cross(j);
+    Vector k = i.cross_normed(j);
     k.normalize();
     //std::vector<Vector> crdset;
     std::array<double, 9> crdset;

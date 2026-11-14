@@ -15,7 +15,7 @@ void transform(Coord& reactIface, Molecule& reactMol1, Molecule& reactMol2, cons
     if (ang == M_PI || ang == 0)
         return;
 
-    Vector rotAxis { alignAxis.cross(axis) };
+    Vector rotAxis { alignAxis.cross_normed(axis) };
     rotAxis.normalize();
     double theta { axis.dot_theta(alignAxis) };
 

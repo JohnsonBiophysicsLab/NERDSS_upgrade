@@ -44,12 +44,13 @@ struct Vector : public Coord {
     void normalize();
 
     /*!
-     * \brief Returns a Vectorwhich is the crossproduct of the Vector with another Vector.
+     * \brief Returns a Vectorwhich is the normalized crossproduct of the Vector with another Vector.
      * \params[in] this Vector 1.
      * \params[in] vec Vector 2.
      */
-    Vector cross(const Vector& vec) const;
+    Vector cross_normed(const Vector& vec) const;
 
+    
     /*!
      * \brief Returns the dot product of the Vector with another Vector.
      * \params[in] this Vector 1.

@@ -19,7 +19,7 @@ double calc_one_angular_displacement(int ifaceIndex1, Molecule& reactMol1, Compl
     v2.calc_magnitude();
 
     double currTheta = v2.dot_theta(v1);
-    Vector test { v2.cross(v1) }; //original.cross.final
+    Vector test { v2.cross_normed(v1) }; //original.cross.final
     if (test.z > 0 && std::abs(currTheta) > 1E-12 && (M_PI - std::abs(currTheta)) > 1E-12) //positive z, flip currTheta
         currTheta = -currTheta;
 

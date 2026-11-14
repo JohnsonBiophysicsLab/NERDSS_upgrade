@@ -60,7 +60,7 @@ void test_vector_cross_projection_and_angle()
 {
     Vector x_axis { 1.0, 0.0, 0.0 };
     Vector y_axis { 0.0, 1.0, 0.0 };
-    Vector cross = x_axis.cross(y_axis);
+    Vector cross = x_axis.cross_normed(y_axis);
     require_close(cross.x, 0.0, "cross product x");
     require_close(cross.y, 0.0, "cross product y");
     require_close(cross.z, 1.0, "cross product z");

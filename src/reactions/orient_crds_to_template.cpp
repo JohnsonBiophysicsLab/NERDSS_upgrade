@@ -18,7 +18,7 @@ Quat orient_crds_to_template(const MolTemplate& oneTemplate, Molecule& targMol)
         // the rotation vector formed by v0 cross v1
         vec1.calc_magnitude();
         vec2.calc_magnitude();
-        Vector rotAxis { vec1.cross(vec2) };
+        Vector rotAxis { vec1.cross_normed(vec2) };
         double angle { vec1.dot_theta(vec2) };
         // TODO: the above vectors are correct
         // determine if we need to flip the sign

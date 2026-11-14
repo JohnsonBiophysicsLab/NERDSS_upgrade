@@ -18,7 +18,12 @@
  * \brief Rotate a vector using a rotation matrix (LEGACY).
  */
 Vector matrix_rotate(Vector& vec, std::array<double, 9>& M);
+/*!
+* \brief Returns a Vector which is the crossproduct of the input Vectors: axb.
+* it is not normalized.
+*/
 
+Vector raw_cross(const Vector& a, const Vector& b);
 /*!
  * \brief Create an Euler (Tait-Bryan angles) rotation matrix from x, y, z values.
  */

@@ -1,24 +1,5 @@
 #include "reactions/association/association.hpp"
-
-namespace {
-
-/*! \brief Plain cross product, without the normalization Vector::cross() applies.
- *
- * Vector::cross() normalizes its result, which is convenient for the call sites
- * that only want a rotation axis but is wrong here for two reasons:
- *   - it discards the |a x b| = |a||b|sin(theta) information that is used below
- *     to detect the degenerate co-linear case, and
- *   - normalize() turns an exactly-zero cross product into a zero vector that
- *     nonetheless reports a magnitude of 1, hiding that degeneracy.
- */
-Vector raw_cross(const Vector& a, const Vector& b)
-{
-    Vector out { (a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x) };
-    out.calc_magnitude();
-    return out;
-}
-
-} // namespace
+#include "math/matrix.hpp"
 
 /*! \brief Returns a vector orthogonal to vec, which is normalized in place.
  *
